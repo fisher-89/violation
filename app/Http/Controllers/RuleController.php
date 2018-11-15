@@ -35,6 +35,7 @@ class RuleController extends Controller
      */
     public function getList(Request $request)    //查询配置
     {//todo 权限
+        dd(7891);
         return $this->ruleService->seeAbout($request);
     }
 
