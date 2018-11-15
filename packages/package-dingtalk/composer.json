@@ -1,0 +1,29 @@
+{
+    "name": "fisher/dingtalk",
+    "description": "A \"dingtalk\" package For PMS.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=7.1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fisher\\Schedule\\": "src/",
+            "Fisher\\Schedule\\Seeds\\": "database/seeds/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Fisher\\Schedule\\Providers\\AppServiceProvider",
+                "Fisher\\Schedule\\Providers\\ModelServiceProvider",
+                "Fisher\\Schedule\\Providers\\RouteServiceProvider",
+                "Fisher\\Schedule\\Providers\\DingServiceProvider"
+            ]
+        }
+    },
+    "version": "1.0.0"
+}
