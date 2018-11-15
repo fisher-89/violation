@@ -36,7 +36,7 @@ class CountService
      * $class  是计算类别   有扣钱和扣分两种
      */
     public function generate($arr, $type,$staffInfo)
-    {
+    {return 30;
         $personal = $this->personage($arr['rule_id'], $arr['staff_sn'], $type, $staffInfo);
         return $personal;
 //        return $this->publicity($arr['rule_id'], $personal, 4, $staffInfo['shop_sn']);
