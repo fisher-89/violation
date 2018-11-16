@@ -16,7 +16,7 @@ class CountDepartment extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['department_id', 'department_name', 'month', 'money', 'score'];
+    protected $fillable = ['department_id', 'department_name', 'paid_money', 'month', 'money', 'score'];
 
     public function countHasDepartment()
     {
