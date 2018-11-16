@@ -16,7 +16,7 @@ class CountStaff extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['staff_sn', 'staff_name', 'paid_money', 'month', 'money', 'score'];
+    protected $fillable = ['department_id','staff_sn', 'staff_name', 'month', 'paid_money', 'money', 'score'];
 
     public function countHasPunish()
     {
