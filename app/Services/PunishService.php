@@ -2,26 +2,34 @@
 
 namespace App\Services;
 
-use App\Models\CountHasDepartment;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
-use App\Models\Punish;
 use App\Models\Rules;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\CountDepartment;
+use App\Models\CountHasPunish;
+use App\Models\CountStaff;
+use App\Models\Punish;
 
 class PunishService
 {
+    protected $ruleModel;
     protected $punishModel;
-    protected $produceMoneyService;
+    protected $countStaffModel;
+    protected $countHasPunishModel;
+    protected $countDepartmentModel;
 
-    public function __construct(Punish $punish, CountService $produceMoneyService)
+    public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, CountDepartment $countDepartment,
+                                Rules $rules)
     {
+        $this->ruleModel = $rules;
         $this->punishModel = $punish;
-        $this->produceMoneyService = $produceMoneyService;
+        $this->countStaffModel = $countStaff;
+        $this->countHasPunishModel = $countHasPunish;
+        $this->countDepartmentModel = $countDepartment;
     }
 
     /**
-     * 大爱信息录入  todo 添加统计表的值、同时录入多员工信息，Excel 没有员工编号
+     * 大爱信息录入
      *
      * @param $request
      * @param $OAData
@@ -30,10 +38,73 @@ class PunishService
      */
     public function receiveData($request, $OAData, $OADataPunish)
     {
-        $hasPaid = $request->has_paid;
-        $paidDate = $hasPaid == 1 ? $request->paid_at : null;
+        $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
         $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
-        $sql = [
+        $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
+        $punish = $this->punishModel->create($sql);
+        $rule = $this->ruleModel->find($request->rule_id);
+        if ($request->sync_point == 1) {
+            try {
+                $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
+            } catch (\Exception $exception) {
+                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
+            }
+        }
+        if (isset($pointId)) {
+            $punish->update(['point_log_id' => $pointId]);
+        }
+        $this->updateCountData($request, $punish);
+        return response($punish, 201);
+    }
+
+    /**
+     * 同步积分制数据
+     *
+     * @param $rule
+     * @param $request
+     * @param $oa
+     * @param $id
+     * @return array
+     */
+    protected function regroupPointSql($rule, $request, $oa, $id)
+    {
+        return [
+            'title' => $rule->name,
+            'staff_sn' => $request->staff_sn,
+            'staff_name' => $request->staff_name,
+            'brand_id' => $oa['brand_id'],
+            'brand_name' => $oa['brand']['name'],
+            'department_id' => $oa['department_id'],
+            'department_name' => $oa['department']['full_name'],
+            'shop_sn' => $oa['shop_sn'],
+            'shop_name' => $oa['shop']['name'],
+            'point_a' => 0,
+            'point_b' => $request->score,
+            'changed_at' => $request->violate_at,
+            'source_id' => 6,
+            'source_foreign_key' => $id,
+            'first_approver_sn' => null,
+            'first_approver_name' => '',
+            'final_approver_sn' => Auth::user()->staff_sn,
+            'final_approver_name' => Auth::user()->realname,
+            'type_id' => 2,
+            'is_revoke' => 0,
+        ];
+    }
+
+    /**
+     * 重组sql数据
+     *
+     * @param $request
+     * @param $OAData
+     * @param $OADataPunish
+     * @param $paidDate
+     * @param $howNumber
+     * @return array
+     */
+    protected function regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber)
+    {
+        return [
             'rule_id' => $request->rule_id,
             'staff_sn' => $OAData['staff_sn'],
             'staff_name' => $OAData['realname'],
@@ -51,7 +122,7 @@ class PunishService
             'billing_name' => $OADataPunish['realname'],
             'billing_at' => $request->billing_sn,
             'violate_at' => $request->violate_at,
-            'has_paid' => $hasPaid,
+            'has_paid' => $request->has_paid,
             'paid_at' => $paidDate,
             'sync_point' => $request->sync_point,
             'month' => date('Ym'),
@@ -59,41 +130,135 @@ class PunishService
             'creator_sn' => Auth::user()->staff_sn,
             'creator_name' => Auth::user()->realname,
         ];
-        if($request->sync_point == 1){
-            $this->storePoint();
+    }
+
+    protected function updateCountData($request, $punish)
+    {
+        $departmentId = $this->updateCountDepartment($request, $punish);
+        $staffData = $this->countStaffModel->where(['month' => date('Ym'), 'staff_sn' => $request->staff_sn])->first();
+        if ($staffData == false) {
+            $countSql = [
+                'department_id' => $departmentId,
+                'staff_sn' => $request->staff_sn,
+                'staff_name' => $request->staff_name,
+                'paid_money' => $request->has_paid == 1 ? $request->money : 0,
+                'month' => date('Ym'),
+                'money' => $request->money,
+                'score' => $request->score
+            ];
+            $countId = $this->countStaffModel->insertGetId($countSql);
+            $this->countHasPunishModel->insert(['count_id' => $countId, 'punish_id' => $punish->id]);
+        } else {
+            $countSql = [
+                'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
+                'money' => $request->money + $staffData->money,
+                'score' => $request->score + $staffData->score
+            ];
+            $staffData->update($countSql);
+            $this->countHasPunishModel->insert(['count_id' => $staffData->id, 'punish_id' => $punish->id]);
         }
-        $punish = $this->punishModel->create($sql);
-        return response($punish, 201);
+    }
+
+    /**
+     * 处理部门数据
+     *
+     * @param $request
+     * @param $punish
+     * @return mixed
+     */
+    protected function updateCountDepartment($request, $punish)
+    {
+        $department = $this->countDepartmentModel->where(['month' => date('Ym'), 'full_name' => $punish->department_name])->first();
+        $explode = explode('-', $punish->department_name);
+        if ($department == false) {
+            foreach ($explode as $item) {
+                $department = $this->countDepartmentModel->where([
+                    'full_name' => isset($info) ? implode('-', $info) . '-' . $item : $item,
+                    'month' => date('Ym')
+                ])->first();
+                if ($department == false) {
+                    $department = $this->countDepartmentModel->create([
+                        'department_name' => $item,
+                        'parent_id' => isset($arrId) ? end($arrId) : null,
+                        'full_name' => isset($info) ? implode('-', $info) . '-' . $item : $item,
+                        'month' => date('Ym'),
+                        'paid_money' => $request->has_paid == 1 ? $request->money : 0,
+                        'money' => $request->money,
+                        'score' => $request->score
+                    ]);
+                } else {
+                    $department->update([
+                        'paid_money' => $request->has_paid == 1 ?  $department->paid_money + $request->money : $department->paid_money,
+                        'money' => $department->money != 0 ? $department->money + $request->money : $request->money,
+                        'score' => $department->score != 0 ? $department->score + $request->score : $request->score
+                    ]);
+                }
+                $arrId[] = $department->id;
+                $info[] = $item;
+            }
+        } else {
+            foreach (explode('-', $department->full_name) as $items) {
+                $department = $this->countDepartmentModel->where([
+                    'month' => date('Ym'),
+                    'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $items : $items
+                ])->first();
+                $department->update([
+                    'paid_money' => $request->has_paid == 1 ? $department->paid_money + $request->money : $department->paid_money,
+                    'money' => $department->money != 0 ? $department->money + $request->money : $request->money,
+                    'score' => $department->score != 0 ? $department->score + $request->score : $request->score
+                ]);
+                $arrDepartment[] = $items;
+            }
+        }
+        return $department->id;
     }
 
     public function getFirst($request)
     {
-        return $this->punishModel->with('rules')->where('id',$request->route('id'))->first();
+        return $this->punishModel->with('rules')->where('id', $request->route('id'))->first();
     }
 
     public function updatePunish($request, $staff, $billing)
     {
+        $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
+        $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
+        $punish = $this->punishModel->find($request->route('id'));
+        if ($punish->has_paid == 1) {
+            abort(400, '已付款数据不能修改');
+        }
+        if ($punish == null) {
+            abort(404, '未找到数据');
+        }
+        $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
 
     }
+
     /**
-     * @param $request   todo 改变单个人的
+     *  单向多条未付款修改已付款
+     *
+     * @param $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
-    public function listPaymentUpdate($request)
+    public function listPaymentUpdate($arr)
     {
-        $punish = $this->punishModel->find($request->route('id'));
-        if (empty($punish)) {
-            abort(404, '不存在的记录');
-        };
-        if ($punish->paid_at == true) {
-            abort(500, '付款状态属于已付款');
+        try {
+            DB::beginTransaction();
+            $data = [];
+            foreach ($arr as $item) {
+                $punish = $this->punishModel->find($item);
+                $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+                $countStaff->update(['paid_money' => $countStaff->paid_money + $punish->money]);
+                $department = $this->countDepartmentModel->find($countStaff->department_id);
+                $department->update(['paid_money' => $department->paid_money + $punish->money]);
+                $data[] = $punish;
+            }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            abort(500, '操作失败，错误：' . $exception->getMessage());
         }
-        $sql = [
-            'has_paid' => 1,
-            'paid_at' => date('Y-m-d H:i:s')
-        ];
-        $punish->update($sql);
-        return response($punish, 201);
+        return response($data, 201);
     }
 
     /**
@@ -107,9 +272,10 @@ class PunishService
     }
 
     /**
+     * 详细页面的支付状态双向改变
+     *
      * @param $request
      * @return array   todo 改变单个人的
-     * 详细页面的支付状态双向改变
      */
     public function detailedPagePayment($request)
     {
@@ -117,18 +283,26 @@ class PunishService
         if ((bool)$punish == false) {
             abort(404, '未找到数据');
         }
-        if ($punish->has_paid == 1) {
-            $sql = [
-                'has_paid' => 0,
-                'paid_at' => NULL
-            ];
-        } else {
-            $sql = [
-                'has_paid' => 1,
-                'paid_at' => date('Y-m-d H:i:s')
-            ];
+        try {
+            DB::beginTransaction();
+            if ($punish->has_paid == 1) {
+                $punish->update(['has_paid' => 0, 'paid_at' => NULL]);
+                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+                $countStaff->update(['paid_money' => $countStaff->paid_money - $punish->money]);
+                $department = $this->countDepartmentModel->find($countStaff->department_id);
+                $department->update(['paid_money' => $department->paid_money - $punish->money]);
+            } else {
+                $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+                $countStaff->update(['paid_money' => $countStaff->paid_money + $punish->money]);
+                $department = $this->countDepartmentModel->find($countStaff->department_id);
+                $department->update(['paid_money' => $department->paid_money + $punish->money]);
+            }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            abort(500, '操作失败，错误：' . $exception->getMessage());
         }
-        $punish->update($sql);
         return response($punish, 201);
     }
 
@@ -142,6 +316,16 @@ class PunishService
         if ((bool)$punish == false) {
             abort(404, '不存在的数据');
         }
+        if ($punish->has_paid == 1) {
+            abort(400, '已支付数据不能删除');
+        }
+        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+        $countStaff->update(['money' => $countStaff->money - $punish->money, 'score' => $countStaff->score - $punish->score]);
+        $department = $this->countDepartmentModel->find($countStaff->department_id);
+        $department->update([
+            'money' => $department->money - $punish->money,
+            'score' => $department->score - $punish->score
+        ]);
         $punish->delete();
         return response('', 204);
     }
@@ -164,8 +348,8 @@ class PunishService
     /**
      * 调用point 接口并返回id
      */
-    public function storePoint()
+    public function storePoint($sql)
     {
-
+        return 1;// todo 返回id
     }
 }

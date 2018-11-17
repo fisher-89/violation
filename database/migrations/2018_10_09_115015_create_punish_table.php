@@ -71,6 +71,7 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('parent_id')->comment('父级id')->nullable();
             $table->char('full_name',100)->comment('部门全称')->index();
             $table->char('month', 6)->comment('月份')->nullable();
+            $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额')->nullable();
             $table->unsignedSmallInteger('score')->comment('分值')->nullable();
         });
@@ -81,6 +82,7 @@ class CreatePunishTable extends Migration
             $table->unsignedMediumInteger('staff_sn')->comment('被大爱者编号');
             $table->char('staff_name', 10)->comment('被大爱者姓名');
             $table->char('month', 6)->comment('月份');
+            $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
             $table->foreign('department_id')->references('id')->on('count_department');

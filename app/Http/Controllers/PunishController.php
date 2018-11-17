@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
 use App\Services\CountService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 
 class PunishController extends Controller
 {
@@ -19,7 +18,7 @@ class PunishController extends Controller
         $this->produceMoneyService = $produceMoneyService;
     }
     /**
-     * 2018/10/9 refactor
+     * 2018/10/9 refactor 大爱列表
      *
      * @param Request $request
      * @return array
@@ -31,12 +30,19 @@ class PunishController extends Controller
         return $this->punishService->punishList($request);
     }
 
+    /**
+     * 大爱获取单条
+     *
+     * @param Request $request
+     * @return PunishService|\Illuminate\Database\Eloquent\Model|null|object
+     */
     public function getPunishFirst(Request $request)
     {
         return $this->punishService->getFirst($request);
     }
+
     /**
-     * 2018年10月9日17:49:20 refactor
+     * 2018年10月9日17:49:20 大爱添加
      *
      * @param Request $request
      * @return array|void
@@ -57,29 +63,40 @@ class PunishController extends Controller
         return $this->punishService->receiveData($request, $staff, $billing);
     }
 
+    /**
+     * 大爱修改
+     *
+     * @param Request $request
+     */
     public function editPunish(Request $request)
     {
         if ((bool)$request->staff_sn == true) {
-            $staff = app('api')->withRealException()->getStaff(trim($request->staff_sn));
+            $staff = app('api')->withRealException()->getStaff($request->staff_sn);
         } else {
             $staff = null;
         }
         if ((bool)$request->billing_sn == true) {
-            $billing = app('api')->withRealException()->getStaff(trim($request->billing_sn));
+            $billing = app('api')->withRealException()->getStaff($request->billing_sn);
         } else {
             $billing = null;
         }
-        $this->punishStoreVerify($request, $staff, $billing);dd(456);
+        $this->punishStoreVerify($request, $staff, $billing);
         return $this->punishService->updatePunish($request, $staff, $billing);
     }
-    //大爱软删除
+
+    /**
+     * 删除
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
     public function delete(Request $request)
     {//todo 操作权限
         return $this->punishService->softRemove($request);
     }
 
     /**
-     * 2018年10月9日17:49:39 refactor
+     * 2018年10月9日17:49:39 表单验证
      *
      * @param $request
      * @param $staff
@@ -97,12 +114,12 @@ class PunishController extends Controller
                     if ($staff == null) {
                         return $event('被大爱员工编号未找到');
                     }
-                    if ($staff['status_id'] == '-1') {
-                        return $event('当前人员属于离职状态');
-                    }
-                    $staff = $id == false ? $staff['staff_sn'] : DB::table('punish')->where('id',$id)->value('staff_sn') ;
-                    if($staff != $staff['staff_sn']){
-                        return $event('被大爱员工不能被修改');//todo 有问题
+//                    if ($staff['status_id'] == '-1') {
+//                        return $event('当前人员属于离职状态');
+//                    }
+                    $staffInfo = $id == false ? $staff['staff_sn'] : DB::table('punish')->where('id',$id)->value('staff_sn') ;
+                    if($staffInfo != $staff['staff_sn']){
+                        return $event('被大爱员工不能被修改');
                     }
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
@@ -152,13 +169,23 @@ class PunishController extends Controller
         );
     }
 
-    //付款信息单向改变
+    /**
+     * 付款状态单向
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
     public function listPaymentMoney(Request $request)
     {// todo 操作权限
-        return $this->punishService->listPaymentUpdate($request);
+        return $this->punishService->listPaymentUpdate($request->all());
     }
 
-    //详细页面用支付状态双向改变
+    /**
+     * 付款状态双休改变
+     *
+     * @param Request $request
+     * @return array
+     */
     public function detailedPagePayment(Request $request)
     {// todo 操作权限
         return $this->punishService->detailedPagePayment($request);

@@ -7,6 +7,7 @@ use App\Models\CountDepartment;
 use App\Models\CountHasPunish;
 use App\Models\CountStaff;
 use App\Models\Punish;
+use Illuminate\Support\Facades\DB;
 
 class TotalService
 {
@@ -15,7 +16,7 @@ class TotalService
     protected $countHasPunishModel;
     protected $countDepartmentModel;
 
-    public function __construct(Punish $punish, CountDepartment $countDepartment, CountStaff $countStaff,CountHasPunish $countHasPunish)
+    public function __construct(Punish $punish, CountDepartment $countDepartment, CountStaff $countStaff, CountHasPunish $countHasPunish)
     {
         $this->punishModel = $punish;
         $this->countStaffModel = $countStaff;
@@ -25,72 +26,38 @@ class TotalService
 
     public function getStaff($request)
     {
-        $this->countInfo();
-//        return $this->countStaffModel->with('countHasPunish.punish')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->countStaffModel->with('countHasPunish.punish')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     public function getDepartment($request)
     {
-
+        return $this->countDepartmentModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
-    protected function countInfo()
+    /**
+     * 同时改变多个人付款状态  全付
+     *
+     * @param $array
+     * @return array
+     */
+    public function updateMoneyStatus($array)
     {
-        $info = $this->punishModel->where(['month' => date('Ym')])->get();
-        $infoArray = $info !== null ? $info->toArray() : [];
-        foreach ($infoArray as $key => $value) {
-            $money = 0;
-            $score = 0;
-            foreach ($infoArray as $k => $v) {
-                if ($value['staff_sn'] == $v['staff_sn']) {
-                    $money = $money + $v['money'];
-                    $score = $score + $v['score'];
-                }
+        $data = [];
+        try {
+            DB::beginTransaction();
+            foreach ($array as $k => $v) {
+                $countStaff = $this->countStaffModel->find($v);
+                $countStaff->update(['paid_money' => $countStaff->money]);
+                $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $department = $this->countDepartmentModel->find($countStaff->department_id);
+                $department->update(['paid_money' => $department->paid_money + $countStaff->money]);
+                $data[] = $countStaff;
             }
-            $date = $this->countDepartmentModel->where(['month' => date('Ym'), 'full_name' => $value['department_name']])->first();
-            if ($date == null) {
-                $ex = explode('-', $value['department_name']);
-                $num = count($ex);
-                $departmentSql = [
-                    'department_name' => $ex[$num - 1],
-                    'parent_id' => isset($id) ? $id : null,
-                    'full_name' => $value['department_name'],
-                    'month' => date('Ym'),
-                    'money' => isset($money) ? $money : 0,
-                    'score' => isset($score) ? $score : 0
-                ];
-                $id = $this->countDepartmentModel->insertGetId($departmentSql);
-            } else {
-                $departmentSql = [
-                    'money' => $date->money + $money,
-                    'score' => $date->score + $score
-                ];
-                $date->update($departmentSql);
-                $id = $date->id;
-            }
-            $staffDate = $this->countStaffModel->where(['month'=>date('Ym'),'staff_sn'=>$value['staff_sn']])->first();
-            if($staffDate == null){
-                $countSql = [
-                    'department_id' => $id,
-                    'staff_sn' => $value['staff_sn'],
-                    'staff_name' => $value['staff_name'],
-                    'month' => date('Ym'),
-                    'money' => $money,
-                    'score' => $score
-                ];
-                $this->countStaffModel->insert($countSql);
-                $hasSql = [
-                    'count_id'=>$id,
-                    'punish_id'=>$value['id']
-                ];
-                $this->countHasPunishModel->insert($hasSql);
-            }else{
-                $countSql = [
-                    'money' => $money,
-                    'score' => $score
-                ];
-                $staffDate->update($countSql);
-            }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            abort(500, '操作失败，错误：' . $exception->getMessage());
         }
+        return $data;
     }
 }

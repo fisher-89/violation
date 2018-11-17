@@ -23,4 +23,9 @@ class TotalController extends Controller
     {
         return $this->totalService->getDepartment($request);
     }
+
+    public function payStatus(Request $request)
+    {
+        return $this->totalService->updateMoneyStatus($request->all());
+    }
 }
