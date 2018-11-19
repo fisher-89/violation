@@ -34,6 +34,7 @@ class CountController extends Controller
      */
     public function score(Request $request)
     {
+        $this->moneyVerify($request);
         $arr = ['staff_sn'=>$request->staff_sn,'rule_id'=>$request->rule_id];
         return $this->countService->generate($arr, 'score');
     }
@@ -41,7 +42,7 @@ class CountController extends Controller
     public function moneyVerify($request)
     {
         $this->validate($request,[
-            'criminal_sn'=>['required','numeric','digits:6',function($attribute, $value, $event){
+            'staff_sn'=>['required','numeric','digits:6',function($attribute, $value, $event){
                 if((bool)trim($value) == true){
                     try{
                         $staffInfo = app('api')->withRealException()->getStaff($value);
@@ -55,7 +56,7 @@ class CountController extends Controller
             }],
             'rule_id'=>'required|numeric|exists:rules,id',
         ],[],[
-            'criminal_sn'=>'被大爱员工编号',
+            'staff_sn'=>'被大爱员工编号',
             'rule_id'=>'制度id',
         ]);
     }

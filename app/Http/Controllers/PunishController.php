@@ -114,9 +114,9 @@ class PunishController extends Controller
                     if ($staff == null) {
                         return $event('被大爱员工编号未找到');
                     }
-//                    if ($staff['status_id'] == '-1') {
-//                        return $event('当前人员属于离职状态');
-//                    }
+                    if ($staff['status_id'] == '-1') {
+                        return $event('当前人员属于离职状态');
+                    }
                     $staffInfo = $id == false ? $staff['staff_sn'] : DB::table('punish')->where('id',$id)->value('staff_sn') ;
                     if($staffInfo != $staff['staff_sn']){
                         return $event('被大爱员工不能被修改');

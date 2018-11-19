@@ -28,9 +28,9 @@ class RuleService
         $this->collocateService = $collocateService;
     }
 
-    public function seeAbout($request)  //读取配置
+    public function seeAbout($request)  //读取配置->SortByQueryString()
     {
-        return $this->rulesModel->SortByQueryString()->filterByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->rulesModel->filterByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     public function readIn($request)   //写入配置
@@ -78,9 +78,9 @@ class RuleService
         return $this->calculationsModel->get();
     }
 
-    public function getTypes($request)
+    public function getTypes($request)//->SortByQueryString()
     {
-        return $this->ruleTypeModel->SortByQueryString()->filterByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->ruleTypeModel->filterByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     public function storeType($request)
