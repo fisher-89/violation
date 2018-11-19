@@ -13,18 +13,18 @@ use App\Models\Rules;
 
 class RuleService
 {
+    protected $signsModel;
     protected $rulesModel;
     protected $punishModel;
     protected $ruleTypeModel;
     protected $collocateService;
-    protected $calculationsModel;
 
-    public function __construct(CollocateService $collocateService, RuleTypes $calculations, Punish $punish, Rules $rules, RuleTypes $ruleTypes)
+    public function __construct(CollocateService $collocateService, Signs $signs, Punish $punish, Rules $rules, RuleTypes $ruleTypes)
     {
+        $this->signsModel = $signs;
         $this->rulesModel = $rules;
         $this->punishModel = $punish;
         $this->ruleTypeModel = $ruleTypes;
-        $this->calculationsModel = $calculations;
         $this->collocateService = $collocateService;
     }
 
@@ -75,7 +75,7 @@ class RuleService
 
     public function getCalculations()
     {
-        return $this->calculationsModel->get();
+        return $this->signsModel->get();
     }
 
     public function getTypes($request)//->SortByQueryString()
