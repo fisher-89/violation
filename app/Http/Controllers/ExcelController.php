@@ -21,13 +21,12 @@ class ExcelController extends Controller
     protected $produceMoneyService;
     protected $countHasDepartmentModel;
 
-    public function __construct(PunishService $punishService, CountService $countService, Punish $punish, Rules $rules,CountHasDepartment $countHasDepartment)
+    public function __construct(PunishService $punishService, CountService $countService, Punish $punish, Rules $rules)
     {
         $this->RulesModel = $rules;
         $this->punishModel = $punish;
         $this->punishService = $punishService;
         $this->produceMoneyService = $countService;
-        $this->countHasDepartmentModel = $countHasDepartment;
     }
 
     /**
@@ -185,7 +184,6 @@ class ExcelController extends Controller
             'department_id' => $departmentId,
             'punish_id' => $punish->id
         ];
-        $this->countHasDepartmentModel->insert($hasSql);
     }
 
     protected function getExcelFileError($request)
