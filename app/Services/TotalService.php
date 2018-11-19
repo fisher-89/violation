@@ -24,11 +24,23 @@ class TotalService
         $this->countDepartmentModel = $countDepartment;
     }
 
+    /**
+     * 获取员工统计数据
+     *
+     * @param $request
+     * @return mixed
+     */
     public function getStaff($request)
     {
         return $this->countStaffModel->with('countHasPunish.punish')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
+    /**
+     * 获取部门统计数据
+     *
+     * @param $request
+     * @return mixed
+     */
     public function getDepartment($request)
     {
         return $this->countDepartmentModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));

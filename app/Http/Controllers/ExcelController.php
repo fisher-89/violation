@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CountHasDepartment;
 use App\Services\CountService;
 use App\Services\PunishService;
 use Illuminate\Http\Request;
