@@ -132,6 +132,13 @@ class PunishService
         ];
     }
 
+    /**
+     * 处理单个人数据
+     *
+     * @param $request
+     * @param $punish
+     * @param $yes
+     */
     protected function updateCountData($request, $punish,$yes)
     {
         $departmentId = $this->updateCountDepartment($request, $punish);
