@@ -126,7 +126,7 @@ trait ResourceLibrary
     }
 
     /**
-     * 添加数据
+     * 积分制添加数据
      *
      * @param $arr
      * @return mixed
@@ -137,16 +137,22 @@ trait ResourceLibrary
     }
 
     /**
-     * 删除数据
+     * 积分制删除数据
      *
      * @param $id
      * @return mixed
      */
-    public function point($id)
+    public function points($id)
     {
         return $this->request('delete', '/admin/point-log/' . $id);
     }
 
+    /**
+     * 获取部门包含所有上级
+     *
+     * @param $params
+     * @return mixed
+     */
     public function getDepartmenetAll($params)
     {
         if (is_array($params)) {
