@@ -19,12 +19,12 @@ Route::options('{a?}/{b?}/{c?}', function () {
 Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     $admin->group(['prefix' => 'punish'], function (RouteContract $admin) {
         $admin->get("/", Controllers\PunishController::class . "@punishList");//列表
-        $admin->get("/{id}",Controllers\PunishController::class.'@getPunishFirst');
+        $admin->get("/{id}",Controllers\PunishController::class.'@getPunishFirst');//变价
         $admin->post("", Controllers\PunishController::class . "@store");//添加
         $admin->put("/{id}",Controllers\PunishController::class.'@editPunish');
         $admin->delete("/{id}", Controllers\PunishController::class . "@delete");//删除
         $admin->post("/pay", Controllers\PunishController::class . "@listPaymentMoney");//展示页面用单向更新已支付
-        $admin->post("/both-pay", Controllers\PunishController::class . "@detailedPagePayment");//详细页面用双向改变支付状态
+        $admin->get("/both-pay/{id}", Controllers\PunishController::class . "@detailedPagePayment");//详细页面用双向改变支付状态
 
         $admin->post("/money", Controllers\CountController::class . "@money");//金额
         $admin->post("/score", Controllers\CountController::class . "@score");//分值
@@ -52,6 +52,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     });
 
     $admin->get('count-staff',Controllers\TotalController::class.'@getStaffTotal');
+    $admin->post('count-staff',Controllers\TotalController::class.'@payStatus');//单个人的
     $admin->get('count-department',Controllers\TotalController::class.'@getDepartmentTotal');
 });
 Route::get("/punish/example",Controllers\ExcelController::class."@example");//导入范例
