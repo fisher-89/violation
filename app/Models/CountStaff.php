@@ -20,6 +20,6 @@ class CountStaff extends Model
 
     public function countHasPunish()
     {
-        return $this->hasOne(CountHasPunish::class, 'id', 'count_id');
+        return $this->hasMany(CountHasPunish::class, 'count_id','id');
     }
 }
