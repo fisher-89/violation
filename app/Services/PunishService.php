@@ -53,7 +53,7 @@ class PunishService
         if (isset($pointId)) {
             $punish->update(['point_log_id' => $pointId]);
         }
-        $this->updateCountData($request, $punish);
+        $this->updateCountData($request, $punish,1);
         return response($punish, 201);
     }
 
@@ -132,7 +132,7 @@ class PunishService
         ];
     }
 
-    protected function updateCountData($request, $punish)
+    protected function updateCountData($request, $punish,$yes)
     {
         $departmentId = $this->updateCountDepartment($request, $punish);
         $staffData = $this->countStaffModel->where(['month' => date('Ym'), 'staff_sn' => $request->staff_sn])->first();
@@ -147,7 +147,6 @@ class PunishService
                 'score' => $request->score
             ];
             $countId = $this->countStaffModel->insertGetId($countSql);
-            $this->countHasPunishModel->insert(['count_id' => $countId, 'punish_id' => $punish->id]);
         } else {
             $countSql = [
                 'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
@@ -155,7 +154,12 @@ class PunishService
                 'score' => $request->score + $staffData->score
             ];
             $staffData->update($countSql);
-            $this->countHasPunishModel->insert(['count_id' => $staffData->id, 'punish_id' => $punish->id]);
+        }
+        if($yes == 1){
+            $this->countHasPunishModel->insert([
+                'count_id' => isset($countId) ? $countId:$staffData->id,
+                'punish_id' => $punish->id
+            ]);
         }
     }
 
@@ -188,7 +192,7 @@ class PunishService
                     ]);
                 } else {
                     $department->update([
-                        'paid_money' => $request->has_paid == 1 ?  $department->paid_money + $request->money : $department->paid_money,
+                        'paid_money' => $request->has_paid == 1 ? $department->paid_money + $request->money : $department->paid_money,
                         'money' => $department->money != 0 ? $department->money + $request->money : $request->money,
                         'score' => $department->score != 0 ? $department->score + $request->score : $request->score
                     ]);
@@ -219,18 +223,31 @@ class PunishService
     }
 
     public function updatePunish($request, $staff, $billing)
-    {
+    {dd($this->storePoint([1,2,3]));
         $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
         $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
         $punish = $this->punishModel->find($request->route('id'));
+        $rule = $this->ruleModel->find($punish->rule_id);
         if ($punish->has_paid == 1) {
             abort(400, '已付款数据不能修改');
         }
         if ($punish == null) {
             abort(404, '未找到数据');
         }
-        $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
-
+//        try {
+//            DB::beginTransaction();
+            $this->reduceCount($punish);//减原来的分
+            $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
+            $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
+            $point = $this->storePoint($this->regroupPointSql($rule,$request,$staff,$punish->id));//重新添加  返回全部
+            $punish->update(['point_log_id'=>$point->id]);
+            $this->updateCountData($request,$punish,0);
+//            DB::commit();
+//        } catch (\Exception $exception) {
+//            DB::rollBack();
+//            abort(500, '修改失败，错误：' . $exception->getMessage());
+//        }
+        return response($punish,201);
     }
 
     /**
@@ -275,7 +292,7 @@ class PunishService
      * 详细页面的支付状态双向改变
      *
      * @param $request
-     * @return array   todo 改变单个人的
+     * @return array
      */
     public function detailedPagePayment($request)
     {
@@ -306,7 +323,6 @@ class PunishService
         return response($punish, 201);
     }
 
-
     /**
      *大爱软删除
      */
@@ -319,17 +335,29 @@ class PunishService
         if ($punish->has_paid == 1) {
             abort(400, '已支付数据不能删除');
         }
-        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-        $countStaff->update(['money' => $countStaff->money - $punish->money, 'score' => $countStaff->score - $punish->score]);
-        $department = $this->countDepartmentModel->find($countStaff->department_id);
-        $department->update([
-            'money' => $department->money - $punish->money,
-            'score' => $department->score - $punish->score
-        ]);
+        $this->reduceCount($punish);
         $punish->delete();
         return response('', 204);
     }
 
+    protected function reduceCount($punish)
+    {
+        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+        $countStaff->update(['money' => $countStaff->money - $punish->money, 'score' => $countStaff->score - $punish->score]);
+        $department = $this->countDepartmentModel->find($countStaff->department_id);
+        foreach (explode('-',$department->full_name)as $item){
+            $department = $this->countDepartmentModel->where([
+                'month' => date('Ym'),
+                'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $item : $item
+            ])->first();
+            $department->update([
+                'money' => $department->money - $punish->money,
+                'score' => $department->score - $punish->score
+            ]);
+            $arrDepartment[] = $item;
+        }
+    }
+    
     public function countData($staffSn, $ruleId)
     {
         $where = [
@@ -350,6 +378,14 @@ class PunishService
      */
     public function storePoint($sql)
     {
-        return 1;// todo 返回id
+        return app('api')->withRealException()->postPoints($sql);
+    }
+
+    /**
+     * @param $id
+     */
+    protected function deletePoint($id)
+    {
+        return app('api')->withRealException()->points($id);
     }
 }
