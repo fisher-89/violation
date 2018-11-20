@@ -27,7 +27,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->get("/both-pay/{id}", Controllers\PunishController::class . "@detailedPagePayment");//详细页面用双向改变支付状态
         $admin->post("/money", Controllers\CountController::class . "@money");//金额
         $admin->post("/score", Controllers\CountController::class . "@score");//分值
-        $admin->get("/export", Controllers\ExcelController::class . "@km_export");//Excel导出
+        $admin->get("/export", Controllers\ExcelController::class . "@export");//Excel导出
         $admin->post("/import", Controllers\ExcelController::class . "@import");//Excel导入
         $admin->get("/example", Controllers\ExcelController::class . "@example");//导入模板
     });
