@@ -139,7 +139,7 @@ class PunishService
      * @param $punish
      * @param $yes
      */
-    protected function updateCountData($request, $punish,$yes)
+    public function updateCountData($request, $punish,$yes)
     {
         $departmentId = $this->updateCountDepartment($request, $punish);
         $staffData = $this->countStaffModel->where(['month' => date('Ym'), 'staff_sn' => $request->staff_sn])->first();

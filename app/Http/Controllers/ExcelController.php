@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\CountService;
+use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
+use App\Models\CountDepartment;
+use App\Models\CountHasPunish;
+use App\Services\CountService;
 use Illuminate\Http\Request;
+use App\Models\CountStaff;
 use App\Http\Requests;
 use App\Models\Punish;
 use App\Models\Rules;
 use Excel;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
+
 
 class ExcelController extends Controller
 {
@@ -18,23 +21,30 @@ class ExcelController extends Controller
     protected $RulesModel;
     protected $punishModel;
     protected $punishService;
+    protected $countStaffModel;
     protected $produceMoneyService;
-    protected $countHasDepartmentModel;
+    protected $countHasPunishModel;
+    protected $countDepartmentModel;
 
-    public function __construct(PunishService $punishService, CountService $countService, Punish $punish, Rules $rules)
+    public function __construct(PunishService $punishService, CountService $countService, Punish $punish, Rules $rules,
+                                CountStaff $countStaff, CountDepartment $countDepartment, CountHasPunish $countHasPunish)
     {
         $this->RulesModel = $rules;
         $this->punishModel = $punish;
+        $this->countStaffModel = $countStaff;
         $this->punishService = $punishService;
         $this->produceMoneyService = $countService;
+        $this->countHasPunishModel = $countHasPunish;
+        $this->countDepartmentModel = $countDepartment;
     }
 
     /**
+     * 导出
+     *
      * @param Request $request
      * @return mixed
-     * 默认导出1个月数据
      */
-    public function km_export(Request $request)
+    public function export(Request $request)
     {
         $all = $request->all();
         if (array_key_exists('page', $all) || array_key_exists('pagesize', $all)) {
@@ -67,6 +77,12 @@ class ExcelController extends Controller
         })->export('xlsx');
     }
 
+    /**
+     * 导入
+     *
+     * @param Request $request
+     * @return mixed
+     */
     public function import(Request $request)
     {
         $this->getExcelFileError($request);
@@ -126,8 +142,8 @@ class ExcelController extends Controller
                 'billing_name' => isset($punish['realname']) ? $punish['realname'] : null,
                 'billing_at' => $res[$i][2],
                 'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($oaData['staff_sn'], $check) : null,
-                'money' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'money',$oaData) : null,
-                'score' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'score',$oaData) : null,
+                'money' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'money', $oaData) : null,
+                'score' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'score', $oaData) : null,
                 'violate_at' => $res[$i][4],
                 'has_paid' => is_numeric($res[$i][7]) ? (int)$res[$i][7] : $res[$i][7],
                 'paid_at' => $res[$i][7] == 1 ? $res[$i][8] : null,
@@ -141,9 +157,7 @@ class ExcelController extends Controller
             $this->excelDataVerify($object);
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
-                if (DB::table('count_department')->where(['month' => date('Ym'), 'full_name' => $oaData['department']['full_name']])->first() == false) {
-                    $this->storeDepartment($oaData, $punish);
-                }
+                $this->punishService->updateCountData($object, $data,1);
                 if ($res[$i][10] == 1) {
 //                    app('api')->postPoints($arr);   todo  调接口同步数据
                 }
@@ -162,28 +176,6 @@ class ExcelController extends Controller
         $info['headers'] = isset($header) ? $header : [];
         $info['errors'] = isset($mistake) ? $mistake : [];
         return $info;
-    }
-
-    public function storeDepartment($OAData, $punish)
-    {
-        $arr = explode('-', $OAData['department']['full_name']);
-        $departmentId = '';
-        foreach ($arr as $key => $value) {
-            if (DB::table('count_department')->where(['month' => date('Ym'), 'department_name' => $value])->first() == false) {
-                $full[] = $value;
-                $departmentSql = [
-                    'department_name' => $value,
-                    'parent_id' => $departmentId != '' ? $departmentId : null,
-                    'full_name' => implode('-', $full),
-                    'month' => date('Ym')
-                ];
-                $departmentId = DB::table('count_department')->insertGetId($departmentSql);
-            }
-        }
-        $hasSql = [
-            'department_id' => $departmentId,
-            'punish_id' => $punish->id
-        ];
     }
 
     protected function getExcelFileError($request)
@@ -255,7 +247,7 @@ class ExcelController extends Controller
                     'billing_at' => 'required|date|before:' . date('Y-m-d H:i:s') . '|after_or_equal:' . $request->violate_at,//开单时间
                     'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
                     'has_paid' => 'required|boolean|digits:1,0|nullable',//支付状态
-                    'paid_at' => ['date', 'nullable','after_or_equal:' . $request->billing_at,function ($attribute, $value, $event) use ($request) {
+                    'paid_at' => ['date', 'nullable', 'after_or_equal:' . $request->billing_at, function ($attribute, $value, $event) use ($request) {
                         if ((bool)trim($request->has_paid) == false) {
                             if (trim($value) == true) {
                                 $this->error['未付款'][] = '付款时间应为空';
@@ -267,7 +259,7 @@ class ExcelController extends Controller
                         }
                     }],
                     'remark' => '',
-                    'sync_point' =>'boolean|nullable|numeric'
+                    'sync_point' => 'boolean|nullable|numeric'
                 ]
             );
         } catch (\Illuminate\Validation\ValidationException $e) {
