@@ -151,7 +151,14 @@ class PunishController extends Controller
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
                 'paid_at' => 'date|nullable',
-                'sync_point' => 'boolean|numeric'
+                'sync_point' => ['boolean','numeric',function($attribute, $value, $event)use($id){
+                    if($id == true){
+                        $point = DB::table('punish')->where('id',$id)->value('sync_point');
+                        if($point != $value){
+                            return $event('积分同步状态不能修改');
+                        }
+                    }
+                }]
             ], [], [
                 'rule_id' => '制度表id',
                 'staff_sn' => '被大爱者编号',
