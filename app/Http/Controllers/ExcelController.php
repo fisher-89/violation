@@ -56,25 +56,27 @@ class ExcelController extends Controller
 //            })
             ->SortByQueryString()->filterByQueryString()->withPagination();
         if (false == (bool)$response) {
-            return response()->json(['message' => '没有找到符号条件的数据'], 404);
+            abort(404,'没有找到符号条件的数据');
+        }else{
+            return $response;
         }
-        $data[] = ['工号', '姓名', '部门', '大爱人', '大爱日期', '第几次', '扣分', '大爱金额', '付款时间', '大爱原因'];
-        foreach ($response as $key => $value) {
-            $data[] = [$value->criminal_sn, $value->criminal_name, $value->criminal_department, $value->punisher_name,
-                $value->Billing_at, $value->degree, $value->deduct_marks, $value->price, $value->paid_at, $value->rules->name
-            ];
-        }
-        Excel::create('大爱信息资料', function ($excel) use ($data) {
-            $excel->sheet('score', function ($query) use ($data) {
-                $query->setColumnFormat(array(
-                    'D' => 'yyyy-mm-dd',
-                ));
-                $query->rows($data);
-                $query->cells('A1:J' . count($data), function ($cells) {
-                    $cells->setAlignment('center');
-                });
-            });
-        })->export('xlsx');
+//        $data[] = ['工号', '姓名', '部门', '大爱人', '大爱日期', '第几次', '扣分', '大爱金额', '付款时间', '大爱原因'];
+//        foreach ($response as $key => $value) {
+//            $data[] = [$value->criminal_sn, $value->criminal_name, $value->criminal_department, $value->punisher_name,
+//                $value->Billing_at, $value->degree, $value->deduct_marks, $value->price, $value->paid_at, $value->rules->name
+//            ];
+//        }
+//        Excel::create('大爱信息资料', function ($excel) use ($data) {
+//            $excel->sheet('score', function ($query) use ($data) {
+//                $query->setColumnFormat(array(
+//                    'D' => 'yyyy-mm-dd',
+//                ));
+//                $query->rows($data);
+//                $query->cells('A1:J' . count($data), function ($cells) {
+//                    $cells->setAlignment('center');
+//                });
+//            });
+//        })->export('xlsx');
     }
 
     /**
