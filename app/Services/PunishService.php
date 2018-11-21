@@ -120,7 +120,7 @@ class PunishService
             'score' => $request->score,
             'billing_sn' => $OADataPunish['staff_sn'],
             'billing_name' => $OADataPunish['realname'],
-            'billing_at' => $request->billing_sn,
+            'billing_at' => $request->billing_at,
             'violate_at' => $request->violate_at,
             'has_paid' => $request->has_paid,
             'paid_at' => $paidDate,
@@ -144,7 +144,7 @@ class PunishService
         $departmentId = $this->updateCountDepartment($request, $punish);
         $staffData = $this->countStaffModel->where(['month' => date('Ym'), 'staff_sn' => $request->staff_sn])->first();
         if ($staffData == false) {
-            $countSql = [
+            $countId = $this->countStaffModel->insertGetId([
                 'department_id' => $departmentId,
                 'staff_sn' => $request->staff_sn,
                 'staff_name' => $request->staff_name,
@@ -152,15 +152,13 @@ class PunishService
                 'month' => date('Ym'),
                 'money' => $request->money,
                 'score' => $request->score
-            ];
-            $countId = $this->countStaffModel->insertGetId($countSql);
+            ]);
         } else {
-            $countSql = [
+            $staffData->update([
                 'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
                 'money' => $request->money + $staffData->money,
                 'score' => $request->score + $staffData->score
-            ];
-            $staffData->update($countSql);
+            ]);
         }
         if($yes == 1){
             $this->countHasPunishModel->insert([
@@ -224,11 +222,25 @@ class PunishService
         return $department->id;
     }
 
+    /**
+     * 获取单条大爱记录
+     *
+     * @param $request
+     * @return Punish|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Model|null|object
+     */
     public function getFirst($request)
     {
         return $this->punishModel->with('rules')->where('id', $request->route('id'))->first();
     }
 
+    /**
+     * 编辑大爱
+     *
+     * @param $request
+     * @param $staff
+     * @param $billing
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
     public function updatePunish($request, $staff, $billing)
     {dd($this->storePoint([1,2,3]));
         $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
@@ -347,6 +359,11 @@ class PunishService
         return response('', 204);
     }
 
+    /**
+     * 先减去原来值
+     *
+     * @param $punish
+     */
     protected function reduceCount($punish)
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
@@ -375,6 +392,12 @@ class PunishService
         return $this->punishModel->where($where)->count() + 1;
     }
 
+    /**
+     * 大爱执行添加
+     *
+     * @param $sql
+     * @return mixed
+     */
     public function excelSave($sql)
     {
         return $this->punishModel->create($sql);

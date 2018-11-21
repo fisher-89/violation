@@ -123,7 +123,7 @@ class PunishController extends Controller
                     }
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
-                'billing_at' => 'required|publish_at |after:start_date',//开单时间
+                'billing_at' => 'required|date|after:start_date',//开单时间
                 'billing_sn' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($punisher) {
                         if ($punisher == null) {
