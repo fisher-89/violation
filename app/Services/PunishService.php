@@ -44,11 +44,11 @@ class PunishService
         $punish = $this->punishModel->create($sql);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
-            try {
+//            try {
                 $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
-            } catch (\Exception $exception) {
-                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
-            }
+//            } catch (\Exception $exception) {
+//                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
+//            }
         }
         if (isset($pointId)) {
             $punish->update(['point_log_id' => $pointId]);
