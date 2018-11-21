@@ -123,7 +123,7 @@ class PunishController extends Controller
                     }
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
-                'billing_at' => 'required|publish_at|after:start_date',//开单时间
+                'billing_at' => 'required|publish_at |after:start_date',//开单时间
                 'billing_sn' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($punisher) {
                         if ($punisher == null) {
@@ -132,7 +132,7 @@ class PunishController extends Controller
                     }
                 ],//开单人编号
                 'billing_name' => 'required|max:10',
-                'violate_at' => 'required|publish_at|after:start_date',//违纪日期
+                'violate_at' => 'required|date|after:start_date',//违纪日期
                 'money' => ['required', 'numeric',
 //                    function ($attribute, $value, $event) use ($data) {
 //                        $now = $this->produceMoneyService->generate($data,'money'); todo 无法使用
@@ -150,7 +150,7 @@ class PunishController extends Controller
 //                    }
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
-                'paid_at' => 'publish_at|nullable',
+                'paid_at' => 'date|nullable',
                 'sync_point' => 'boolean|numeric'
             ], [], [
                 'rule_id' => '制度表id',
