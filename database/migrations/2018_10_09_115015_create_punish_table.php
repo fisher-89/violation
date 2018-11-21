@@ -27,7 +27,6 @@ class CreatePunishTable extends Migration
             $table->text('money')->comment('扣钱公式')->nullable();
             $table->text('score')->comment('扣分公式')->nullable();
             $table->text('remark')->comment('备注')->nullable();
-            $table->unsignedSmallInteger('sort')->comment('排序')->default(99);
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('type_id')->references('id')->on('rule_types');
@@ -85,6 +84,7 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
+            $table->unsignedTinyInteger('has_settle')->comment('是否结清')->default(0);
             $table->foreign('department_id')->references('id')->on('count_department');
         });
 
