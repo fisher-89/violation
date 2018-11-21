@@ -21,8 +21,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->get("/", Controllers\PunishController::class . "@punishList");//列表
         $admin->get("/{id}",Controllers\PunishController::class.'@getPunishFirst');//变价
         $admin->post("", Controllers\PunishController::class . "@store");//添加
-//        $admin->put("/{id}",Controllers\PunishController::class.'@editPunish');
-        $admin->put("/{id}",function (){return 456789123;});
+        $admin->put("/{id}",Controllers\PunishController::class.'@editPunish');
         $admin->delete("/{id}", Controllers\PunishController::class . "@delete");//删除
         $admin->post("/pay", Controllers\PunishController::class . "@listPaymentMoney");//展示页面用单向更新已支付
         $admin->get("/both-pay/{id}", Controllers\PunishController::class . "@detailedPagePayment");//详细页面用双向改变支付状态
