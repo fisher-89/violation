@@ -44,11 +44,11 @@ class PunishService
         $punish = $this->punishModel->create($sql);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
-//            try {
+            try {
                 $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
-//            } catch (\Exception $exception) {
-//                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
-//            }
+            } catch (\Exception $exception) {
+                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
+            }
         }
         if (isset($pointId)) {
             $punish->update(['point_log_id' => $pointId]);
@@ -242,7 +242,7 @@ class PunishService
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
     public function updatePunish($request, $staff, $billing)
-    {dd($this->storePoint([1,2,3]));
+    {
         $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
         $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
         $punish = $this->punishModel->find($request->route('id'));
@@ -258,8 +258,8 @@ class PunishService
             $this->reduceCount($punish);//减原来的分
             $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
             $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
-            $point = $this->storePoint($this->regroupPointSql($rule,$request,$staff,$punish->id));//重新添加  返回全部
-            $punish->update(['point_log_id'=>$point->id]);
+            $pointId = $this->storePoint($this->regroupPointSql($rule,$request,$staff,$punish->id));//重新添加  返回全部
+            $punish->update(['point_log_id'=>$pointId]);
             $this->updateCountData($request,$punish,0);
 //            DB::commit();
 //        } catch (\Exception $exception) {
@@ -407,8 +407,8 @@ class PunishService
      * 调用point 接口并返回id
      */
     public function storePoint($sql)
-    {
-        return app('api')->withRealException()->postPoints($sql);
+    {return 10;
+//        return app('api')->withRealException()->postPoints($sql);
     }
 
     /**
@@ -416,6 +416,6 @@ class PunishService
      */
     protected function deletePoint($id)
     {
-        return app('api')->withRealException()->points($id);
+//        return app('api')->withRealException()->points($id);
     }
 }
