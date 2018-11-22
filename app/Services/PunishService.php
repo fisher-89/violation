@@ -53,7 +53,7 @@ class PunishService
         if (isset($pointId)) {
             $punish->update(['point_log_id' => $pointId]);
         }
-        $this->updateCountData($request, $punish,1);
+        $this->updateCountData($request, $punish, 1);
         return response($punish, 201);
     }
 
@@ -139,7 +139,7 @@ class PunishService
      * @param $punish
      * @param $yes
      */
-    public function updateCountData($request, $punish,$yes)
+    public function updateCountData($request, $punish, $yes)
     {
         $departmentId = $this->updateCountDepartment($request, $punish);
         $staffData = $this->countStaffModel->where(['month' => date('Ym'), 'staff_sn' => $request->staff_sn])->first();
@@ -151,18 +151,21 @@ class PunishService
                 'paid_money' => $request->has_paid == 1 ? $request->money : 0,
                 'month' => date('Ym'),
                 'money' => $request->money,
-                'score' => $request->score
+                'score' => $request->score,
+                'has_settle' => $request->has_paid == 1 ? 1 : 0
             ]);
         } else {
             $staffData->update([
                 'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
                 'money' => $request->money + $staffData->money,
-                'score' => $request->score + $staffData->score
+                'score' => $request->score + $staffData->score,
+                'has_settle' => $request->has_paid == 1 ? $request->money + $staffData->money ==
+                $staffData->paid_money + $request->money ? 1 : 0 : 0
             ]);
         }
-        if($yes == 1){
+        if ($yes == 1) {
             $this->countHasPunishModel->insert([
-                'count_id' => isset($countId) ? $countId:$staffData->id,
+                'count_id' => isset($countId) ? $countId : $staffData->id,
                 'punish_id' => $punish->id
             ]);
         }
@@ -255,18 +258,18 @@ class PunishService
         }
 //        try {
 //            DB::beginTransaction();
-            $this->reduceCount($punish);//减原来的分
-            $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
-            $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
-            $pointId = $this->storePoint($this->regroupPointSql($rule,$request,$staff,$punish->id));//重新添加  返回全部
-            $punish->update(['point_log_id'=>$pointId]);
-            $this->updateCountData($request,$punish,0);
+        $this->reduceCount($punish);//减原来的分
+        $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
+        $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
+        $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
+        $punish->update(['point_log_id' => $pointId]);
+        $this->updateCountData($request, $punish, 0);
 //            DB::commit();
 //        } catch (\Exception $exception) {
 //            DB::rollBack();
 //            abort(500, '修改失败，错误：' . $exception->getMessage());
 //        }
-        return response($punish,201);
+        return response($punish, 201);
     }
 
     /**
@@ -284,7 +287,10 @@ class PunishService
                 $punish = $this->punishModel->find($item);
                 $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-                $countStaff->update(['paid_money' => $countStaff->paid_money + $punish->money]);
+                $countStaff->update([
+                    'paid_money' => $countStaff->paid_money + $punish->money,
+                    'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+                ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $punish->money]);
                 $data[] = $punish;
@@ -324,13 +330,19 @@ class PunishService
             if ($punish->has_paid == 1) {
                 $punish->update(['has_paid' => 0, 'paid_at' => NULL]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-                $countStaff->update(['paid_money' => $countStaff->paid_money - $punish->money]);
+                $countStaff->update([
+                    'paid_money' => $countStaff->paid_money - $punish->money,
+                    'has_settle' => 0
+                    ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money - $punish->money]);
             } else {
                 $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-                $countStaff->update(['paid_money' => $countStaff->paid_money + $punish->money]);
+                $countStaff->update([
+                    'paid_money' => $countStaff->paid_money + $punish->money,
+                    'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+                ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $punish->money]);
             }
@@ -367,9 +379,13 @@ class PunishService
     protected function reduceCount($punish)
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-        $countStaff->update(['money' => $countStaff->money - $punish->money, 'score' => $countStaff->score - $punish->score]);
+        $countStaff->update([
+            'money' => $countStaff->money - $punish->money,
+            'score' => $countStaff->score - $punish->score,
+            'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+            ]);
         $department = $this->countDepartmentModel->find($countStaff->department_id);
-        foreach (explode('-',$department->full_name)as $item){
+        foreach (explode('-', $department->full_name) as $item) {
             $department = $this->countDepartmentModel->where([
                 'month' => date('Ym'),
                 'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $item : $item
@@ -381,7 +397,7 @@ class PunishService
             $arrDepartment[] = $item;
         }
     }
-    
+
     public function countData($staffSn, $ruleId)
     {
         $where = [
@@ -407,7 +423,8 @@ class PunishService
      * 调用point 接口并返回id
      */
     public function storePoint($sql)
-    {return 10;
+    {
+        return 10;
 //        return app('api')->withRealException()->postPoints($sql);
     }
 
