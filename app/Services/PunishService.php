@@ -54,7 +54,7 @@ class PunishService
             $punish->update(['point_log_id' => $pointId]);
         }
         $this->updateCountData($request, $punish, 1);
-        return response($punish, 201);
+        return response($this->punishModel->with('rules')->where('id',$punish->id)->first(), 201);
     }
 
     /**
@@ -273,7 +273,7 @@ class PunishService
             DB::rollBack();
             abort(500, '修改失败，错误：' . $exception->getMessage());
         }
-        return response($punish, 201);
+        return response($this->punishModel->with('rules')->where('id',$punish->id)->first(), 201);
     }
 
     /**
@@ -371,7 +371,9 @@ class PunishService
             abort(400, '已支付数据不能删除');
         }
         $this->reduceCount($punish);
-        $this->deletePoint($punish->point_log_id);
+        if($punish->point_log_id == true){
+            $this->deletePoint($punish->point_log_id);
+        }
         $punish->delete();
         return response('', 204);
     }
