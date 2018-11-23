@@ -55,6 +55,11 @@ class RequestSSOService
         return config('sso.host');
     }
 
+    protected function getPointUri(): string
+    {
+        return config('sso.point_host');
+    }
+
     public function get($endpoint, $query = [], $header = [])
     {
         return $this->request('get', $endpoint, [
@@ -63,12 +68,12 @@ class RequestSSOService
         ]);
     }
 
-    public function post($endpoint, $params = [], $header = [])
+    public function post($endpoint, $params = [], $header = [],$point='')
     {
         return $this->request('post', $endpoint, [
             'headers' => array_merge($header, $this->headers),
             'json' => $params,
-        ]);
+        ],$point);
     }
 
     public function put($endpoint, $params = [], $header = [])
@@ -87,11 +92,11 @@ class RequestSSOService
         ]);
     }
 
-    public function delete($endpoint, $params = [], $header = [])
+    public function delete($endpoint, $params = [], $header = [],$point = '')
     {
         return $this->request('delete', $endpoint, [
             'headers' => array_merge($header, $this->headers),
             'json' => $params,
-        ]);
+        ],$point);
     }
 }

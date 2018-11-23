@@ -424,8 +424,8 @@ class PunishService
      */
     public function storePoint($sql)
     {
-        return 10;
-//        return app('api')->withRealException()->postPoints($sql);
+        $arr = app('api')->withRealException()->postPoints($sql);
+        return $arr['id'];
     }
 
     /**
@@ -433,6 +433,6 @@ class PunishService
      */
     protected function deletePoint($id)
     {
-//        return app('api')->withRealException()->points($id);
+        return app('api')->withRealException()->points($id);
     }
 }

@@ -22,7 +22,6 @@ trait UserHelper
     public function setHeader($headers = [])
     {
         $this->headers = $headers;
-
         return $this;
     }
 
@@ -52,12 +51,12 @@ trait UserHelper
      *
      * @return array
      */
-    protected function post($endpoint, $params = [], $headers = [])
+    protected function post($endpoint, $params = [], $headers = [],$point = '')
     {
         return $this->request('post', $endpoint, [
             'headers' => array_merge($headers, $this->headers),
             'json' => $params,
-        ]);
+        ],$point);
     }
 
     /**
@@ -69,10 +68,14 @@ trait UserHelper
      *
      * @return array
      */
-    protected function request($method, $endpoint, $options = [])
+    protected function request($method, $endpoint, $options = [],$point = '')
     {
         try {
-            return $this->unwrapResponse($this->getHttpClient($this->getBaseOptions())->{$method}($endpoint, $options));
+            if($point == 1){
+                return $this->unwrapResponse($this->getHttpClient($this->getPointOptions())->{$method}('admin/point-log', $options));
+            }else{
+                return $this->unwrapResponse($this->getHttpClient($this->getBaseOptions())->{$method}($endpoint, $options));
+            }
         } catch (ClientException $exception) {
             if ($this->withRealException) {
                 throw $this->getApiException($exception);
@@ -81,6 +84,14 @@ trait UserHelper
         }
     }
 
+    protected function getPointOptions()
+    {
+        $options = [
+            'base_uri' => method_exists($this, 'getPointUri') ? $this->getPointUri() : '',
+            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
+        ];
+        return $options;
+    }
     /**
      * Return base Guzzle options.
      *
@@ -92,7 +103,6 @@ trait UserHelper
             'base_uri' => method_exists($this, 'getBaseUri') ? $this->getBaseUri() : '',
             'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
         ];
-
         return $options;
     }
 

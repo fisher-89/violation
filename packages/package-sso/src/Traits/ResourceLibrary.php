@@ -122,7 +122,7 @@ trait ResourceLibrary
      */
     public function getPoints($params)
     {
-        return $this->request('get', '/admin/point-log');
+        return $this->get('/admin/point-log');
     }
 
     /**
@@ -133,7 +133,7 @@ trait ResourceLibrary
      */
     public function postPoints($arr)
     {
-        return $this->request('post', '/admin/point-log/', $arr);
+        return $this->post('/admin/point-log/', $arr, [], 1);
     }
 
     /**
@@ -144,7 +144,7 @@ trait ResourceLibrary
      */
     public function points($id)
     {
-        return $this->request('delete', '/admin/point-log/' . $id);
+        return $this->delete('/admin/point-log/' . $id, [], [], 1);
     }
 
     /**
