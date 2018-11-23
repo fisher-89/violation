@@ -260,9 +260,13 @@ class PunishService
             DB::beginTransaction();
             $this->reduceCount($punish);//减原来的分
             $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
-            $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
-            $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
-            $punish->update(['point_log_id' => $pointId]);
+            if ($punish->point_log_id == true) {
+                $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
+            }
+            if ($request->sync_point == 1) {
+                $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
+                $punish->update(['point_log_id' => $pointId]);
+            }
             $this->updateCountData($request, $punish, 0);
             DB::commit();
         } catch (\Exception $exception) {
@@ -367,6 +371,7 @@ class PunishService
             abort(400, '已支付数据不能删除');
         }
         $this->reduceCount($punish);
+        $this->deletePoint($punish->point_log_id);
         $punish->delete();
         return response('', 204);
     }
