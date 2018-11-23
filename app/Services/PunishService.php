@@ -54,7 +54,8 @@ class PunishService
             $punish->update(['point_log_id' => $pointId]);
         }
         $this->updateCountData($request, $punish, 1);
-        return response($this->punishModel->with('rules')->where('id',$punish->id)->first(), 201);
+        $punish->rules = $rule;
+        return response($punish, 201);
     }
 
     /**
@@ -273,7 +274,8 @@ class PunishService
             DB::rollBack();
             abort(500, '修改失败，错误：' . $exception->getMessage());
         }
-        return response($this->punishModel->with('rules')->where('id',$punish->id)->first(), 201);
+        $punish->rules = $rule;
+        return response($punish, 201);
     }
 
     /**
