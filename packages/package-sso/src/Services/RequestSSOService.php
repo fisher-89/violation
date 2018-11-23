@@ -40,7 +40,7 @@ class RequestSSOService
                     'client_secret' => config('sso.client_secret'),
                 ]
             ]);
-            Cache::put($cacheKey, $response, floor($response['expires_in']/60));
+            Cache::put($cacheKey, $response, floor($response['expires_in'] / 60));
         }
         $this->setHeader([
             'Accept' => 'application/json',
@@ -68,12 +68,12 @@ class RequestSSOService
         ]);
     }
 
-    public function post($endpoint, $params = [], $header = [],$point='')
+    public function post($endpoint, $params = [], $header = [], $point = '')
     {
         return $this->request('post', $endpoint, [
             'headers' => array_merge($header, $this->headers),
             'json' => $params,
-        ],$point);
+        ], $point);
     }
 
     public function put($endpoint, $params = [], $header = [])
@@ -92,11 +92,11 @@ class RequestSSOService
         ]);
     }
 
-    public function delete($endpoint, $params = [], $header = [],$point = '')
+    public function delete($endpoint, $params = [], $header = [], $point = '')
     {
         return $this->request('delete', $endpoint, [
             'headers' => array_merge($header, $this->headers),
             'json' => $params,
-        ],$point);
+        ], $point);
     }
 }

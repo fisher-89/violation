@@ -256,19 +256,19 @@ class PunishService
         if ($punish == null) {
             abort(404, '未找到数据');
         }
-//        try {
-//            DB::beginTransaction();
-        $this->reduceCount($punish);//减原来的分
-        $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
-        $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
-        $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
-        $punish->update(['point_log_id' => $pointId]);
-        $this->updateCountData($request, $punish, 0);
-//            DB::commit();
-//        } catch (\Exception $exception) {
-//            DB::rollBack();
-//            abort(500, '修改失败，错误：' . $exception->getMessage());
-//        }
+        try {
+            DB::beginTransaction();
+            $this->reduceCount($punish);//减原来的分
+            $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
+            $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
+            $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
+            $punish->update(['point_log_id' => $pointId]);
+            $this->updateCountData($request, $punish, 0);
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            abort(500, '修改失败，错误：' . $exception->getMessage());
+        }
         return response($punish, 201);
     }
 
@@ -333,7 +333,7 @@ class PunishService
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
                     'has_settle' => 0
-                    ]);
+                ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money - $punish->money]);
             } else {
@@ -383,7 +383,7 @@ class PunishService
             'money' => $countStaff->money - $punish->money,
             'score' => $countStaff->score - $punish->score,
             'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
-            ]);
+        ]);
         $department = $this->countDepartmentModel->find($countStaff->department_id);
         foreach (explode('-', $department->full_name) as $item) {
             $department = $this->countDepartmentModel->where([
@@ -433,6 +433,6 @@ class PunishService
      */
     protected function deletePoint($id)
     {
-        return app('api')->withRealException()->points($id);
+        return app('api')->withRealException()->deletePoints($id);
     }
 }

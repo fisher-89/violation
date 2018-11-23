@@ -51,12 +51,12 @@ trait UserHelper
      *
      * @return array
      */
-    protected function post($endpoint, $params = [], $headers = [],$point = '')
+    protected function post($endpoint, $params = [], $headers = [], $point = '')
     {
         return $this->request('post', $endpoint, [
             'headers' => array_merge($headers, $this->headers),
             'json' => $params,
-        ],$point);
+        ], $point);
     }
 
     /**
@@ -68,12 +68,12 @@ trait UserHelper
      *
      * @return array
      */
-    protected function request($method, $endpoint, $options = [],$point = '')
+    protected function request($method, $endpoint, $options = [], $point = '')
     {
         try {
-            if($point == 1){
-                return $this->unwrapResponse($this->getHttpClient($this->getPointOptions())->{$method}('admin/point-log', $options));
-            }else{
+            if ($point == 1) {
+                return $this->unwrapResponse($this->getHttpClient($this->getPointOptions())->{$method}($endpoint, $options));
+            } else {
                 return $this->unwrapResponse($this->getHttpClient($this->getBaseOptions())->{$method}($endpoint, $options));
             }
         } catch (ClientException $exception) {
@@ -92,6 +92,7 @@ trait UserHelper
         ];
         return $options;
     }
+
     /**
      * Return base Guzzle options.
      *

@@ -133,7 +133,7 @@ trait ResourceLibrary
      */
     public function postPoints($arr)
     {
-        return $this->post('/admin/point-log/', $arr, [], 1);
+        return $this->post('/admin/point-log', $arr, [], 1);
     }
 
     /**
@@ -142,7 +142,7 @@ trait ResourceLibrary
      * @param $id
      * @return mixed
      */
-    public function points($id)
+    public function deletePoints($id)
     {
         return $this->delete('/admin/point-log/' . $id, [], [], 1);
     }
