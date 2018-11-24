@@ -98,7 +98,7 @@ class ExcelController extends Controller
             }
 
             $rule = $this->RulesModel->where('name', $res[$i][3])->first();
-            $check = $rule->id;
+            $check = $rule != null ? $rule->id : null;
             if ((bool)$check === false) {
                 $this->error['大爱原因'][] = '错误';
             }
