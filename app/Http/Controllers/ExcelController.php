@@ -250,7 +250,7 @@ class ExcelController extends Controller
             });
             $excel->sheet('主表', function ($sheet) use ($cellData) {
                 $sheet->rows($cellData);
-                $sheet->cells('A1:A11', function ($cells) {
+                $sheet->cells('A1:K1', function ($cells) {
                     $cells->setAlignment('center');
                     $cells->setBackground('#D2E9FF');
                 });
