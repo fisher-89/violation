@@ -86,8 +86,10 @@ class PunishService
             'source_foreign_key' => $id,
             'first_approver_sn' => null,
             'first_approver_name' => '',
-            'final_approver_sn' => Auth::user()->staff_sn,
-            'final_approver_name' => Auth::user()->realname,
+            'final_approver_sn' => null,
+            'final_approver_name' => '',
+            'recorder_sn' => Auth::user()->staff_sn,
+            'recorder_name' => Auth::user()->realname,
             'type_id' => 2,
             'is_revoke' => 0,
         ];

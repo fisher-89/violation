@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
 use App\Models\CountDepartment;
@@ -56,8 +57,8 @@ class ExcelController extends Controller
 //            })
             ->SortByQueryString()->filterByQueryString()->withPagination();
         if (false == (bool)$response) {
-            abort(404,'没有找到符号条件的数据');
-        }else{
+            abort(404, '没有找到符号条件的数据');
+        } else {
             return $response;
         }
 //        $data[] = ['工号', '姓名', '部门', '大爱人', '大爱日期', '第几次', '扣分', '大爱金额', '付款时间', '大爱原因'];
@@ -102,7 +103,8 @@ class ExcelController extends Controller
             abort(404, '未找到导入数据');
         }
         $header = $res[0];
-        for ($i = 1; $i < count($res); $i++) {
+        $count = count($res);
+        for ($i = 1; $i < $count; $i++) {
             $this->error = [];
             if (is_numeric(trim($res[$i][0]))) {
                 try {
@@ -123,7 +125,8 @@ class ExcelController extends Controller
                 $this->error['开单人编号'][] = '不正确';
             }
 
-            $check = $this->RulesModel->where('name', $res[$i][3])->value('id');
+            $rule = $this->RulesModel->where('name', $res[$i][3])->first();
+            $check = $rule->id;
             if ((bool)$check === false) {
                 $this->error['大爱原因'][] = '错误';
             }
@@ -158,10 +161,11 @@ class ExcelController extends Controller
             $object = new Requests\Admin\PunishRequest($sql);
             $this->excelDataVerify($object);
             if ($this->error == []) {
+                DB::beginTransaction();
                 $data = $this->punishService->excelSave($sql);
-                $this->punishService->updateCountData($object, $data,1);
+                $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
-//                    app('api')->postPoints($arr);   todo  调接口同步数据
+                    $point[] = $this->pointSql($rule, $object, $oaData, $data->id);
                 }
                 if ($data == true) {
                     $success[] = $data;
@@ -174,10 +178,52 @@ class ExcelController extends Controller
                 continue;
             }
         }
+        if (isset($point)) {
+            try {
+                $arr = app('api')->withRealException()->postPoints($point);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                DB::rollBack();
+                abort(500, '数据同步失败，错误：' . $e->getMessage());
+            }
+            foreach ($arr as $item) {
+                $this->punishModel->where('id', $item['source_foreign_key'])->update([
+                    'point_log_id' => $item['id']
+                ]);
+            }
+        }
+        DB::commit();
         $info['data'] = isset($success) ? $success : [];
         $info['headers'] = isset($header) ? $header : [];
         $info['errors'] = isset($mistake) ? $mistake : [];
         return $info;
+    }
+
+    protected function pointSql($rule, $request, $oa, $id)
+    {
+        return [
+            'title' => $rule->name,
+            'staff_sn' => $request->staff_sn,
+            'staff_name' => $request->staff_name,
+            'brand_id' => $oa['brand_id'],
+            'brand_name' => $oa['brand']['name'],
+            'department_id' => $oa['department_id'],
+            'department_name' => $oa['department']['full_name'],
+            'shop_sn' => $oa['shop_sn'],
+            'shop_name' => $oa['shop']['name'],
+            'point_a' => 0,
+            'point_b' => $request->score,
+            'changed_at' => $request->violate_at,
+            'source_id' => 6,
+            'source_foreign_key' => $id,
+            'first_approver_sn' => null,
+            'first_approver_name' => '',
+            'final_approver_sn' => null,
+            'final_approver_name' => '',
+            'recorder_sn' => Auth::user()->staff_sn,
+            'recorder_name' => Auth::user()->realname,
+            'type_id' => 2,
+            'is_revoke' => 0,
+        ];
     }
 
     protected function getExcelFileError($request)
