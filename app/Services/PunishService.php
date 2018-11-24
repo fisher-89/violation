@@ -46,6 +46,10 @@ class PunishService
         if ($request->sync_point == 1) {
             try {
                 $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
+                if(!isset($arr[0]['source_foreign_key'])){
+                    DB::rollBack();
+                    abort(500, '数据同步验证错误,请联系管理员');
+                }
             } catch (\Exception $exception) {
                 abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
             }

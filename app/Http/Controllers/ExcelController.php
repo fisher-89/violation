@@ -161,7 +161,7 @@ class ExcelController extends Controller
             $object = new Requests\Admin\PunishRequest($sql);
             $this->excelDataVerify($object);
             if ($this->error == []) {
-                DB::beginTransaction();
+//                DB::beginTransaction();
                 $data = $this->punishService->excelSave($sql);
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
@@ -181,9 +181,13 @@ class ExcelController extends Controller
         if (isset($point)) {
             try {
                 $arr = app('api')->withRealException()->postPoints($point);
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                DB::rollBack();
-                abort(500, '数据同步失败，错误：' . $e->getMessage());
+                if(!isset($arr[0]['source_foreign_key'])){
+//                    DB::rollBack();
+                    abort(500, '数据同步验证错误,请联系管理员');
+                }
+            } catch (\Exception $exception){
+//                DB::rollBack();
+                abort(500, '数据同步失败，错误：' . $exception->getMessage());
             }
             foreach ($arr as $item) {
                 $this->punishModel->where('id', $item['source_foreign_key'])->update([
@@ -191,7 +195,7 @@ class ExcelController extends Controller
                 ]);
             }
         }
-        DB::commit();
+//        DB::commit();
         $info['data'] = isset($success) ? $success : [];
         $info['headers'] = isset($header) ? $header : [];
         $info['errors'] = isset($mistake) ? $mistake : [];
