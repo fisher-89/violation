@@ -242,11 +242,15 @@ class ExcelController extends Controller
         }
         Excel::create('大爱录入范例文件', function ($excel) use ($cellData, $data) {
             $excel->sheet('辅助表', function ($sheet) use ($data) {
+                $sheet->cells('A1', function ($cells) {
+                    $cells->setAlignment('center');
+                    $cells->setBackground('#D2E9FF');
+                });
                 $sheet->rows($data);
             });
             $excel->sheet('主表', function ($sheet) use ($cellData) {
                 $sheet->rows($cellData);
-                $sheet->cells('A1', function ($cells) {
+                $sheet->cells('A1:A11', function ($cells) {
                     $cells->setAlignment('center');
                     $cells->setBackground('#D2E9FF');
                 });
