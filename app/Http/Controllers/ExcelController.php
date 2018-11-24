@@ -349,6 +349,12 @@ class ExcelController extends Controller
         }
     }
 
+    /**
+     * Excel错误返回转换
+     *
+     * @param $str
+     * @return mixed
+     */
     protected function conversion($str)
     {
         $arr = [
@@ -376,6 +382,12 @@ class ExcelController extends Controller
         return $arr[$str];
     }
 
+    /**
+     * Excel错误返回拆分重组
+     *
+     * @param $value
+     * @return array
+     */
     protected function conversionValue($value)
     {
         $array = [];
@@ -398,6 +410,12 @@ class ExcelController extends Controller
         return $array;
     }
 
+    /**
+     * Excel 文件接收验证
+     *
+     * @param $request
+     * @return mixed
+     */
     protected function receive($request)
     {
 //        $this->excelVerify($request);
