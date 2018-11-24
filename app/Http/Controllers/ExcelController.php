@@ -40,7 +40,7 @@ class ExcelController extends Controller
     }
 
     /**
-     * 导出
+     * Excel导出
      *
      * @param Request $request
      * @return mixed
@@ -104,6 +104,7 @@ class ExcelController extends Controller
         }
         $header = $res[0];
         $count = count($res);
+        DB::beginTransaction();
         for ($i = 1; $i < $count; $i++) {
             $this->error = [];
             if (is_numeric(trim($res[$i][0]))) {
@@ -161,7 +162,6 @@ class ExcelController extends Controller
             $object = new Requests\Admin\PunishRequest($sql);
             $this->excelDataVerify($object);
             if ($this->error == []) {
-//                DB::beginTransaction();
                 $data = $this->punishService->excelSave($sql);
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
@@ -182,11 +182,10 @@ class ExcelController extends Controller
             try {
                 $arr = app('api')->withRealException()->postPoints($point);
                 if(!isset($arr[0]['source_foreign_key'])){
-//                    DB::rollBack();
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
             } catch (\Exception $exception){
-//                DB::rollBack();
+                DB::rollBack();
                 abort(500, '数据同步失败，错误：' . $exception->getMessage());
             }
             foreach ($arr as $item) {
@@ -195,13 +194,22 @@ class ExcelController extends Controller
                 ]);
             }
         }
-//        DB::commit();
+        DB::commit();
         $info['data'] = isset($success) ? $success : [];
         $info['headers'] = isset($header) ? $header : [];
         $info['errors'] = isset($mistake) ? $mistake : [];
         return $info;
     }
 
+    /**
+     * Excel 重组数组
+     *
+     * @param $rule
+     * @param $request
+     * @param $oa
+     * @param $id
+     * @return array
+     */
     protected function pointSql($rule, $request, $oa, $id)
     {
         return [
@@ -230,6 +238,11 @@ class ExcelController extends Controller
         ];
     }
 
+    /**
+     * Excel 文件接收验证
+     *
+     * @param $request
+     */
     protected function getExcelFileError($request)
     {
         if (!$request->hasFile('file')) {
@@ -241,6 +254,9 @@ class ExcelController extends Controller
         }
     }
 
+    /**
+     * Excel 导入模板
+     */
     public function example()
     {
         $assist = DB::table('rules')->get();
@@ -278,6 +294,11 @@ class ExcelController extends Controller
         })->export('xlsx');
     }
 
+    /**
+     * Excel 文件验证
+     *
+     * @param $request
+     */
     protected function excelVerify($request)
     {
         $this->validate($request,
@@ -289,6 +310,11 @@ class ExcelController extends Controller
         );
     }
 
+    /**
+     * Excel 内容验证
+     *
+     * @param $request
+     */
     protected function excelDataVerify($request)
     {
         try {
