@@ -41,23 +41,23 @@ class PunishService
         $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
         $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
         $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
+        DB::beginTransaction();
         $punish = $this->punishModel->create($sql);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
             try {
-                $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
-                if(!isset($arr[0]['source_foreign_key'])){
-                    DB::rollBack();
+                $point = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
+                if (!isset($point['id'])) {
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
+                $punish->update(['point_log_id' => $point['id']]);
+                $this->updateCountData($request, $punish, 1);
             } catch (\Exception $exception) {
-                abort(500, '添加错误积分同步失败，错误：' . $exception->getMessage());
+                DB::rollBack();
+                abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
-        if (isset($pointId)) {
-            $punish->update(['point_log_id' => $pointId]);
-        }
-        $this->updateCountData($request, $punish, 1);
+        DB::commit();
         $punish->rules = $rule;
         return response($punish, 201);
     }
@@ -159,14 +159,14 @@ class PunishService
                 'month' => date('Ym'),
                 'money' => $request->money,
                 'score' => $request->score,
-                'has_settle' => $request->has_paid == 1 ? 1 : 0
+                'has_settle' => $request->has_paid >= 1 ? 1 : 0
             ]);
         } else {
             $staffData->update([
                 'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
                 'money' => $request->money + $staffData->money,
                 'score' => $request->score + $staffData->score,
-                'has_settle' => $request->has_paid == 1 ? $request->money + $staffData->money ==
+                'has_settle' => $request->has_paid == 1 ? $request->money + $staffData->money <=
                 $staffData->paid_money + $request->money ? 1 : 0 : 0
             ]);
         }
@@ -266,13 +266,16 @@ class PunishService
         try {
             DB::beginTransaction();
             $this->reduceCount($punish);//减原来的分
-            $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
             if ($punish->point_log_id == true) {
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
             }
+            $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
             if ($request->sync_point == 1) {
-                $pointId = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全部
-                $punish->update(['point_log_id' => $pointId]);
+                $point = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全
+                if(!isset($point['id'])){
+                    abort(500, '数据同步验证错误,请联系管理员');
+                }
+                $punish->update(['point_log_id' => $point['id']]);
             }
             $this->updateCountData($request, $punish, 0);
             DB::commit();
@@ -301,7 +304,7 @@ class PunishService
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
-                    'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+                    'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $punish->money]);
@@ -353,7 +356,7 @@ class PunishService
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
-                    'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+                    'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $punish->money]);
@@ -397,7 +400,7 @@ class PunishService
         $countStaff->update([
             'money' => $countStaff->money - $punish->money,
             'score' => $countStaff->score - $punish->score,
-            'has_settle' => $countStaff->paid_money + $punish->money == $countStaff->money ? 1 : 0
+            'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
         ]);
         $department = $this->countDepartmentModel->find($countStaff->department_id);
         foreach (explode('-', $department->full_name) as $item) {
@@ -439,8 +442,7 @@ class PunishService
      */
     public function storePoint($sql)
     {
-        $arr = app('api')->withRealException()->postPoints($sql);
-        return $arr['id'];
+        return app('api')->withRealException()->postPoints($sql);
     }
 
     /**
