@@ -406,6 +406,12 @@ class ExcelController extends Controller
         return $this->excelData($request,$model);
     }
 
+    public function countDepartmentExcel(Request $request)
+    {
+        $model = $this->countDepartmentModel;
+        return $this->excelData($request,$model);
+    }
+
     protected function excelData($request,$model)
     {
         $all = $request->all();
