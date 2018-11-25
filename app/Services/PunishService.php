@@ -257,15 +257,20 @@ class PunishService
         $howNumber = $this->countData($request->criminal_sn, $request->rule_id);
         $punish = $this->punishModel->find($request->route('id'));
         $rule = $this->ruleModel->find($punish->rule_id);
-        if ($punish->has_paid == 1) {
-            abort(400, '已付款数据不能修改');
-        }
         if ($punish == null) {
             abort(404, '未找到数据');
         }
+        if ($punish->has_paid == 1) {
+            abort(400, '已付款数据不能修改');
+        }
+        $this->updateBeforeDateVerify($request->route('id'),$punish['month'],$staff['staff_sn']);
+        if($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber,$punish) == 1){
+            $punish->rules = $rule;
+            return $punish;
+        }
         try {
             DB::beginTransaction();
-            $this->reduceCount($punish);//减原来的分
+            $this->reduceCount($punish);//todo 减原来的分,1.找已付款高于金额的问题，2.计算公式
             if ($punish->point_log_id == true) {
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
             }
@@ -287,6 +292,41 @@ class PunishService
         return response($punish, 201);
     }
 
+    /**
+     * 修改数据监测
+     *
+     * @param $request
+     * @param $staff
+     * @param $billing
+     * @param $paidDate
+     * @param $howNumber
+     * @param $model
+     * @return int
+     */
+    protected function hasUpdate($request, $staff, $billing, $paidDate, $howNumber,$model)
+    {
+        $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
+        unset($arr['creator_sn'],$arr['creator_name']);
+        $array = array_diff_assoc($arr,$model->toArray());
+        if($array == []){
+            return 1;
+        }
+    }
+
+    /**
+     * 最后数据监测
+     *
+     * @param $id
+     * @param $month
+     * @param $staff_sn
+     */
+    protected function updateBeforeDateVerify($id,$month,$staff_sn)
+    {
+        $data = $this->punishModel->where(['month'=>$month,'staff_sn'=>$staff_sn])->orderBy('id','desc')->first();
+        if($data->id != $id){
+            abort(400,'不能修改之前的数据');
+        }
+    }
     /**
      *  单向多条未付款修改已付款
      *

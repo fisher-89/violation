@@ -17,6 +17,7 @@ class PunishController extends Controller
         $this->punishService = $punishService;
         $this->produceMoneyService = $produceMoneyService;
     }
+
     /**
      * 2018/10/9 refactor 大爱列表
      *
@@ -107,18 +108,23 @@ class PunishController extends Controller
         $id = $request->route('id');
         $data['staff_sn'] = $request->staff_sn;
         $data['rule_id'] = $request->rule_id;
+        $punish = DB::table('punish')->where('id', $id)->first();
         $this->validate($request,
             [
-                'rule_id' => 'required|numeric|exists:rules,id',//制度表I
-                'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff,$id) {
+                'rule_id' => ['required', 'numeric', 'exists:rules,id', function($attribute, $value, $event)use($id,$punish){
+                    if($id == true && $value != $punish->rule_id){
+                        return $event('被大爱原因不能被修改');
+                    }
+                }],//制度表I
+                'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff, $id, $punish) {
                     if ($staff == null) {
                         return $event('被大爱员工编号未找到');
                     }
                     if ($staff['status_id'] == '-1') {
                         return $event('当前人员属于离职状态');
                     }
-                    $staffInfo = $id == false ? $staff['staff_sn'] : DB::table('punish')->where('id',$id)->value('staff_sn') ;
-                    if($staffInfo != $staff['staff_sn']){
+                    $staffInfo = $id == false ? $staff['staff_sn'] : $punish->staff_sn;
+                    if ($staffInfo != $staff['staff_sn']) {
                         return $event('被大爱员工不能被修改');
                     }
                 }],//被大爱者编号
@@ -151,10 +157,9 @@ class PunishController extends Controller
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
                 'paid_at' => 'date|nullable',
-                'sync_point' => ['boolean','numeric',function($attribute, $value, $event)use($id){
-                    if($id == true){
-                        $point = DB::table('punish')->where('id',$id)->value('sync_point');
-                        if($point != $value){
+                'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id,$punish) {
+                    if ($id == true) {
+                        if ($punish->sync_point != $value) {
                             return $event('积分同步状态不能修改');
                         }
                     }
