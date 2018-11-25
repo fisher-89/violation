@@ -263,8 +263,8 @@ class PunishService
         if ($punish->has_paid == 1) {
             abort(400, '已付款数据不能修改');
         }
-        $this->updateBeforeDateVerify($request->route('id'),$punish['month'],$staff['staff_sn']);
-        if($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber,$punish) == 1){
+        $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
+        if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
             $punish->rules = $rule;
             return $punish;
         }
@@ -277,7 +277,7 @@ class PunishService
             $punish->update($this->regroupSql($request, $staff, $billing, $paidDate, $howNumber));
             if ($request->sync_point == 1) {
                 $point = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全
-                if(!isset($point['id'])){
+                if (!isset($point['id'])) {
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
                 $punish->update(['point_log_id' => $point['id']]);
@@ -303,12 +303,12 @@ class PunishService
      * @param $model
      * @return int
      */
-    protected function hasUpdate($request, $staff, $billing, $paidDate, $howNumber,$model)
+    protected function hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $model)
     {
         $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
-        unset($arr['creator_sn'],$arr['creator_name']);
-        $array = array_diff_assoc($arr,$model->toArray());
-        if($array == []){
+        unset($arr['creator_sn'], $arr['creator_name']);
+        $array = array_diff_assoc($arr, $model->toArray());
+        if ($array == []) {
             return 1;
         }
     }
@@ -320,13 +320,14 @@ class PunishService
      * @param $month
      * @param $staff_sn
      */
-    protected function updateBeforeDateVerify($id,$month,$staff_sn)
+    protected function updateBeforeDateVerify($id, $month, $staff_sn)
     {
-        $data = $this->punishModel->where(['month'=>$month,'staff_sn'=>$staff_sn])->orderBy('id','desc')->first();
-        if($data->id != $id){
-            abort(400,'不能修改之前的数据');
+        $data = $this->punishModel->where(['month' => $month, 'staff_sn' => $staff_sn])->orderBy('id', 'desc')->first();
+        if ($data->id != $id) {
+            abort(400, '不能修改之前的数据');
         }
     }
+
     /**
      *  单向多条未付款修改已付款
      *
@@ -340,6 +341,9 @@ class PunishService
             $data = [];
             foreach ($arr as $item) {
                 $punish = $this->punishModel->find($item);
+                if ($punish->has_paid == 1) {
+                    abort(400, '该数据已是已支付状态');
+                }
                 $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
@@ -382,23 +386,21 @@ class PunishService
         }
         try {
             DB::beginTransaction();
+            $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+            $department = $this->countDepartmentModel->find($countStaff->department_id);
             if ($punish->has_paid == 1) {
                 $punish->update(['has_paid' => 0, 'paid_at' => NULL]);
-                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
                     'has_settle' => 0
                 ]);
-                $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money - $punish->money]);
             } else {
                 $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
-                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
-                $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $punish->money]);
             }
             DB::commit();
@@ -422,7 +424,7 @@ class PunishService
             abort(400, '已支付数据不能删除');
         }
         $this->reduceCount($punish);
-        if($punish->point_log_id == true){
+        if ($punish->point_log_id == true) {
             $this->deletePoint($punish->point_log_id);
         }
         $punish->delete();

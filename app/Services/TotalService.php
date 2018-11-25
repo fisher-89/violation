@@ -59,7 +59,7 @@ class TotalService
             DB::beginTransaction();
             foreach ($array as $k => $v) {
                 $countStaff = $this->countStaffModel->find($v);
-                $countStaff->update(['paid_money' => $countStaff->money]);
+                $countStaff->update(['paid_money' => $countStaff->money, 'has_settle' => 1]);
                 $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $department->update(['paid_money' => $department->paid_money + $countStaff->money]);
