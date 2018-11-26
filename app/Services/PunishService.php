@@ -153,8 +153,8 @@ class PunishService
         if ($staffData == false) {
             $countId = $this->countStaffModel->insertGetId([
                 'department_id' => $departmentId,
-                'staff_sn' => $request->staff_sn,
-                'staff_name' => $request->staff_name,
+                'staff_sn' => $punish->staff_sn,
+                'staff_name' => $punish->staff_name,
                 'paid_money' => $request->has_paid == 1 ? $request->money : 0,
                 'month' => $yes == 0 ? $punish->month : date('Ym'),
                 'money' => $request->money,
@@ -189,7 +189,7 @@ class PunishService
     {
         $department = $this->countDepartmentModel->where(['month' => $punish->month, 'full_name' => $punish->department_name])->first();
         if ($department == false) {
-            foreach (explode('-', $punish->full_name) as $item) {
+            foreach (explode('-', $punish->department_name) as $item) {
                 $department = $this->countDepartmentModel->where([
                     'full_name' => isset($info) ? implode('-', $info) . '-' . $item : $item,
                     'month' => $punish->month
