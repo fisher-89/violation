@@ -274,7 +274,7 @@ class PunishService
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
             }
             $sql = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
-            unset($sql['month'],$sql['creator_sn'],$sql['creator_name']);
+            unset($sql['month'], $sql['creator_sn'], $sql['creator_name']);
             $punish->update($sql);
             if ($request->sync_point == 1) {
                 $point = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全
@@ -307,7 +307,7 @@ class PunishService
     protected function hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $model)
     {
         $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
-        unset($arr['month'],$arr['creator_sn'], $arr['creator_name']);
+        unset($arr['month'], $arr['creator_sn'], $arr['creator_name']);
         $array = array_diff_assoc($arr, $model->toArray());
         if ($array == []) {
             return 1;
@@ -353,10 +353,10 @@ class PunishService
                 ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
                 $arrDepartment = [];
-                foreach (explode('-',$department->full_name) as $value){
+                foreach (explode('-', $department->full_name) as $value) {
                     $departmentValue = $this->countDepartmentModel->where([
                         'month' => $punish->month,
-                        'full_name' => $arrDepartment!=[] ? implode('-', $arrDepartment) . '-' . $value : $value
+                        'full_name' => $arrDepartment != [] ? implode('-', $arrDepartment) . '-' . $value : $value
                     ])->first();
                     $departmentValue->update([
                         'paid_money' => $department->paid_money + $punish->money
@@ -405,7 +405,7 @@ class PunishService
                     'paid_money' => $countStaff->paid_money - $punish->money,
                     'has_settle' => 0
                 ]);
-                foreach (explode('-',$department->full_name) as $value){
+                foreach (explode('-', $department->full_name) as $value) {
                     $department = $this->countDepartmentModel->where([
                         'month' => $punish->month,
                         'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $value : $value
@@ -419,7 +419,7 @@ class PunishService
                     'paid_money' => $countStaff->paid_money + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
-                foreach (explode('-',$department->full_name) as $value){
+                foreach (explode('-', $department->full_name) as $value) {
                     $department = $this->countDepartmentModel->where([
                         'month' => $punish->month,
                         'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $value : $value
