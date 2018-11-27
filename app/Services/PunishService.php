@@ -352,12 +352,13 @@ class PunishService
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $department = $this->countDepartmentModel->find($countStaff->department_id);
+                $arrDepartment = [];
                 foreach (explode('-',$department->full_name) as $value){
-                    $department = $this->countDepartmentModel->where([
+                    $departmentValue = $this->countDepartmentModel->where([
                         'month' => $punish->month,
-                        'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $value : $value
+                        'full_name' => $arrDepartment!=[] ? implode('-', $arrDepartment) . '-' . $value : $value
                     ])->first();
-                    $department->update([
+                    $departmentValue->update([
                         'paid_money' => $department->paid_money + $punish->money
                     ]);
                     $arrDepartment[] = $value;
