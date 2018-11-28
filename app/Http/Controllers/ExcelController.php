@@ -106,7 +106,7 @@ class ExcelController extends Controller
             $msg['rule_id'] = $check;
             $sql = [
                 'rule_id' => $check,
-                'staff_sn' => isset($oaData['staff_sn']) ? $oaData['staff_sn'] : 999999,
+                'staff_sn' => isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null,
                 'staff_name' => isset($oaData['realname']) ? $oaData['realname'] : null,
                 'brand_id' => isset($oaData['brand_id']) ? $oaData['brand_id'] : null,
                 'brand_name' => isset($oaData['brand']['name']) ? $oaData['brand']['name'] : null,
@@ -115,7 +115,7 @@ class ExcelController extends Controller
                 'position_id' => isset($oaData['position_id']) ? $oaData['position_id'] : null,
                 'position_name' => isset($oaData['position']['name']) ? $oaData['position']['name'] : null,
                 'shop_sn' => isset($oaData['shop_sn']) ? $oaData['shop_sn'] : null,
-                'billing_sn' => isset($punish['staff_sn']) ? $punish['staff_sn'] : 999999,
+                'billing_sn' => isset($punish['staff_sn']) ? $punish['staff_sn'] : null,
                 'billing_name' => isset($punish['realname']) ? $punish['realname'] : null,
                 'billing_at' => $res[$i][2],
                 'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($oaData['staff_sn'], $check) : null,
@@ -393,7 +393,6 @@ class ExcelController extends Controller
      */
     protected function receive($request)
     {
-//        $this->excelVerify($request);
         if (!$request->hasFile('file')) {
             abort(400, '未选择文件');
         }
