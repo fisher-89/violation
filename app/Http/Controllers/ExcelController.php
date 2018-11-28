@@ -150,15 +150,15 @@ class ExcelController extends Controller
             }
         }
         if (isset($point)) {
-            try {
+//            try {
                 $arr = app('api')->withRealException()->postPoints($point);
                 if(!isset($arr[0]['source_foreign_key'])){
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
-            } catch (\Exception $exception){
-                DB::rollBack();
-                abort(500, '数据同步失败，错误：' . $exception->getMessage());
-            }
+//            } catch (\Exception $exception){
+//                DB::rollBack();
+//                abort(500, '数据同步失败，错误：' . $exception->getMessage());
+//            }
             foreach ($arr as $item) {
                 $this->punishModel->where('id', $item['source_foreign_key'])->update([
                     'point_log_id' => $item['id']
@@ -233,7 +233,7 @@ class ExcelController extends Controller
         $assist = DB::table('rules')->get();
         $rule = array_column($assist == null ? [] : $assist->toArray(), 'name');
         $cellData[] = ['员工编号', '员工姓名', '开单日期', '大爱名称', '违纪时间', '开单人编号', '开单人姓名', '是否付款', '付款时间', '备注', '同步积分制'];
-        $cellData[] = ['例：100000（被大爱编号）', '例：张三（被大爱姓名）', '例：2018-01-01（开单时间）', '例：迟到30分钟内（制度名称全写）', '例：2018-01-01', '例：100000（开单人编号）', '例：李四', '例：0（0：表示没有付款，1：表示已经付款）', '例：2018-01-01（没有付款这里为空）', '默认为空', '默认同步，1:不同步'];
+        $cellData[] = ['例：100000（被大爱编号）', '例：张三（被大爱姓名）', '例：2018-01-01（开单时间）', '例：迟到30分钟内（制度名称全写）', '例：2018-01-01', '例：100000（开单人编号）', '例：李四', '例：0（0：表示没有付款，1：表示已经付款）', '例：2018-01-01（没有付款这里为空）', '默认为空', '默认不同步，1:同步'];
         $data[] = ['大爱名称'];
         for ($i = 0; $i < count($rule); $i++) {
             $data[] = [
