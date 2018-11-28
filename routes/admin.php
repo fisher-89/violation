@@ -51,5 +51,9 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');
     $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');
     $admin->get('count-department', Controllers\TotalController::class . '@getDepartmentTotal');
+
+    $admin->get('punish/image', Controllers\ImageController::class . '@punishImage');
+    $admin->get('count-staff/image', Controllers\ImageController::class . '@countStaffImage');
+    $admin->get('count-department/image', Controllers\ImageController::class . '@countDepartmentImage');
 });
 Route::get("/punish/example", Controllers\ExcelController::class . "@example");

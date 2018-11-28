@@ -16,30 +16,14 @@ class CountService
     protected $ruleModel;
     protected $punishModel;
     protected $variableModel;
-    protected $additionModel;
-    protected $calculationsModel;
+    protected $signsModel;
 
-    public function __construct(Signs $addition, Punish $punishModel, RuleTypes $calculations, Rules $rules, Variables $variable)
+    public function __construct(Signs $signs, Punish $punishModel, Rules $rules, Variables $variable)
     {
         $this->ruleModel = $rules;
-        $this->additionModel = $addition;
+        $this->signsModel = $signs;
         $this->variableModel = $variable;
         $this->punishModel = $punishModel;
-        $this->calculationsModel = $calculations;
-    }
-
-    /**
-     * @param $request
-     * @return array|float|int
-     * 计算扣钱方式   更新
-     * $data  包含被大爱人名字,Sn,大爱id
-     * $class  是计算类别   有扣钱和扣分两种
-     */
-    public function generate($arr, $type,$staffInfo)
-    {return 30;
-        $personal = $this->personage($arr['rule_id'], $arr['staff_sn'], $type, $staffInfo);
-        return $personal;
-//        return $this->publicity($arr['rule_id'], $personal, 4, $staffInfo['shop_sn']);
     }
 
     /**
@@ -50,17 +34,17 @@ class CountService
      * @param $type
      * @return array|mixed
      */
-    private function personage($ruleId, $staffSn, $type, $staffInfo)
+    public function generate($arr, $type)
     {
-        $calculations = $this->calculationsModel->get();
-        $equation = $this->ruleModel->where('id', $ruleId)->value($type);//获取公式.
+        $signs = $this->signsModel->get();
+        $equation = $this->ruleModel->where('id', $arr['rule_id'])->value($type);//获取公式.
         if ($equation == '') {
             return ['status' => 'defined', 'msg' => '请自定义数据'];
         }
         $variable = $this->variableModel->get();//系统函数
         $systemArray = explode(',', $equation);
-        $repeatedly = $this->operator($calculations, implode($systemArray));
-        $SystemVariables = $this->parameters($variable, $repeatedly, $ruleId, $staffSn, $staffInfo);
+        $repeatedly = $this->operator($signs, implode($systemArray));
+        $SystemVariables = $this->parameters($variable, $repeatedly);
         $output = $this->variable($SystemVariables);
         if (preg_match('/\A-Za-z/', $output)) {
             abort(500, '公式运算出错：包含非可运算数据');
@@ -75,13 +59,13 @@ class CountService
      * @param $v
      * @return null|string|string[]
      */
-    protected function operator($calculations, $v)
+    protected function operator($signs, $v)
     {
-        return preg_replace_callback('/{<(\d+)>}/', function ($query) use ($calculations, $v) {
+        return preg_replace_callback('/{<(\d+)>}/', function ($query) use ($signs, $v) {
             preg_match_all('/{<(\d+)>}/', $v, $operation);
-            foreach ($calculations as $calculationsK) {
-                if ($calculationsK['id'] == $query[1]) {
-                    return $calculationsK['code'];
+            foreach ($signs as $key) {
+                if ($key['id'] == $query[1]) {
+                    return $key['code'];
                 }
             }
         }, $v);
@@ -94,9 +78,9 @@ class CountService
      * @param $repeatedly
      * @return null|string|string[]
      */
-    protected function parameters($variable, $repeatedly, $ruleId, $staffSn, $staffInfo)
+    protected function parameters($variable, $repeatedly)
     {
-        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly, $ruleId, $staffSn, $staffInfo) {
+        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly) {
             preg_match_all('/{{(\w+)}}/', $repeatedly, $operation);
             foreach ($variable as $items) {
                 if ($items['key'] === $query[1]) {
