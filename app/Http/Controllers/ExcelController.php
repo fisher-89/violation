@@ -150,15 +150,15 @@ class ExcelController extends Controller
             }
         }
         if (isset($point)) {
-//            try {
+            try {
                 $arr = app('api')->withRealException()->postPoints($point);
                 if(!isset($arr[0]['source_foreign_key'])){
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
-//            } catch (\Exception $exception){
-//                DB::rollBack();
-//                abort(500, '数据同步失败，错误：' . $exception->getMessage());
-//            }
+            } catch (\Exception $exception){
+                DB::rollBack();
+                abort(500, '数据同步失败，错误：' . $exception->getMessage());
+            }
             foreach ($arr as $item) {
                 $this->punishModel->where('id', $item['source_foreign_key'])->update([
                     'point_log_id' => $item['id']
