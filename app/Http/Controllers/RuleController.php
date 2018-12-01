@@ -113,7 +113,7 @@ class RuleController extends Controller
         $id = $request->route('id');
         $this->validate($request, [
             'type_id' => 'required|numeric|exists:rule_types,id',
-            'name' => ['required', 'max:10', $id === null ? 'unique:rules,name' : Rule::unique('rules', 'name')->whereNotIn('id', explode(' ', $id))],
+            'name' => ['required', 'max:20', $id === null ? 'unique:rules,name' : Rule::unique('rules', 'name')->whereNotIn('id', explode(' ', $id))],
             'description' => 'max:300',
             'money' => ['required', function ($attribute, $value, $event) {
                 $variable = $this->variableModel->get();
