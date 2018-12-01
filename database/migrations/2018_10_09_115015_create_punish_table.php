@@ -23,7 +23,7 @@ class CreatePunishTable extends Migration
         Schema::create('rules', function (Blueprint $table) {
             $table->smallIncrements('id');
             $table->unsignedTinyInteger('type_id')->comment();
-            $table->char('name', 10)->comment('名字');
+            $table->char('name', 20)->comment('名字');
             $table->text('money')->comment('扣钱公式')->nullable();
             $table->text('score')->comment('扣分公式')->nullable();
             $table->text('remark')->comment('备注')->nullable();
