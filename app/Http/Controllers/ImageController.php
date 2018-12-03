@@ -41,10 +41,11 @@ class ImageController extends Controller
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => 'image/',//图片保存路径   public_path().
+            'file_path' => 'image/',//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
+            'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高
             'filed_staff_name_width' => 90,//序号被大爱员工的宽度
@@ -95,7 +96,7 @@ class ImageController extends Controller
         //画表格纵线 及 写入表头文字
         foreach ($base['column_x_arr'] as $key => $x) {
 //            imageline($img, $x, $border_top, $x, $border_bottom, $white_coler);//画纵线
-            imagettftext($img, 12, 0, $x - $base['column_text_offset_arr'][$key] + 1,
+            imagettftext($img, $base['header_size'], 0, $x - $base['column_text_offset_arr'][$key] + 1,
                 $border_top + $base['row_height'] - 14, $bg_color, $base['font_ulr'], $base['table_header'][$key]);//写入表头文字
         }
         //画表格横线
