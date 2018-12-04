@@ -464,22 +464,24 @@ class PunishService
     protected function reduceCount($punish)
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-        $countStaff->update([
-            'money' => $countStaff->money - $punish->money,
-            'score' => $countStaff->score - $punish->score,
-            'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
-        ]);
-        $department = $this->countDepartmentModel->find($countStaff->department_id);
-        foreach (explode('-', $department->full_name) as $item) {
-            $department = $this->countDepartmentModel->where([
-                'month' => $punish->month,
-                'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $item : $item
-            ])->first();
-            $department->update([
-                'money' => $department->money - $punish->money,
-                'score' => $department->score - $punish->score
+        if($countStaff == true) {
+            $countStaff->update([
+                'money' => $countStaff->money - $punish->money,
+                'score' => $countStaff->score - $punish->score,
+                'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
             ]);
-            $arrDepartment[] = $item;
+            $department = $this->countDepartmentModel->find($countStaff->department_id);
+            foreach (explode('-', $department->full_name) as $item) {
+                $department = $this->countDepartmentModel->where([
+                    'month' => $punish->month,
+                    'full_name' => isset($arrDepartment) ? implode('-', $arrDepartment) . '-' . $item : $item
+                ])->first();
+                $department->update([
+                    'money' => $department->money - $punish->money,
+                    'score' => $department->score - $punish->score
+                ]);
+                $arrDepartment[] = $item;
+            }
         }
     }
 
