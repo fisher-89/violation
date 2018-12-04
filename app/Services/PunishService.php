@@ -308,7 +308,6 @@ class PunishService
     {
         $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
         unset($arr['month'], $arr['creator_sn'], $arr['creator_name']);
-        dd($arr, $model->toArray());
         $array = array_diff_assoc($arr, $model->toArray());
         if ($array == []) {
             return 1;
