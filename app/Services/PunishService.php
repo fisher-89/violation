@@ -255,13 +255,13 @@ class PunishService
         $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
         $howNumber = $this->countData($request->staff_sn, $request->rule_id);
         $punish = $this->punishModel->find($request->route('id'));
-        $rule = $this->ruleModel->find($punish->rule_id);
         if ($punish == null) {
             abort(404, '未找到数据');
         }
         if ($punish->has_paid == 1) {
             abort(400, '已付款数据不能修改');
         }
+        $rule = $this->ruleModel->find($punish->rule_id);
         $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
         if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
             $punish->rules = $rule;
@@ -308,6 +308,7 @@ class PunishService
     {
         $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
         unset($arr['month'], $arr['creator_sn'], $arr['creator_name']);
+        dd($arr, $model->toArray());
         $array = array_diff_assoc($arr, $model->toArray());
         if ($array == []) {
             return 1;
