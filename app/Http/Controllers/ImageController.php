@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\CountDepartment;
+use App\Models\Pushing;
+use App\Models\PushingLog;
 use Illuminate\Http\Request;
 use App\Models\CountStaff;
 use App\Models\Punish;
@@ -10,18 +12,29 @@ use App\Models\Punish;
 class ImageController extends Controller
 {
     protected $punishModel;
+    protected $pushingModel;
     protected $countStaffModel;
+    protected $pushingLogModel;
     protected $countDepartmentModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, CountDepartment $countDepartment)
+    public function __construct(Punish $punish, CountStaff $countStaff, CountDepartment $countDepartment, Pushing $pushing, PushingLog $pushingLog)
     {
         $this->punishModel = $punish;
+        $this->pushingModel = $pushing;
         $this->countStaffModel = $countStaff;
+        $this->pushingLogModel = $pushingLog;
         $this->countDepartmentModel = $countDepartment;
     }
 
     public function punishImage(Request $request)
     {
+        $push = $this->pushingModel->where('id', $request->route('id'))->first();
+        if ($push == false) {
+            abort(404, '未找到推送的群');
+        }
+        if ($push->staff_sn != $request->user()->staff_sn) {
+            abort(401, '暂无推送该群的权限');
+        }
         $punish = $this->punishModel->when($request->all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
@@ -34,7 +47,7 @@ class ImageController extends Controller
         $text[] = [];
         $params = [
             'row' => count($text),
-            'file_name' => date('Y-m-d') . '大爱记录.png',
+            'file_name' => date('YmdHis') .rand(1,9). '大爱记录.png',
             'title' => date('Y-m-d') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
@@ -110,13 +123,12 @@ class ImageController extends Controller
                 $sub++;
             }
         }
-
         //计算标题写入起始位置
         $title_fout_box = imagettfbbox($base['title_font_size'], 0, $base['font_ulr'], $params['title']);//imagettfbbox() 返回一个含有 8 个单元的数组表示了文本外框的四个角：
         $title_fout_width = $title_fout_box[2] - $title_fout_box[0];//右下角 X 位置 - 左下角 X 位置 为文字宽度
         $title_fout_height = $title_fout_box[1] - $title_fout_box[7];//左下角 Y 位置- 左上角 Y 位置 为文字高度
         //居中写入标题
-        imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height']+10, $text_coler, $base['font_ulr'], $params['title']);
+        imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_coler, $base['font_ulr'], $params['title']);
         //写入制表时间
         imagettftext($img, 8, 0, $base['border'], $base['img_height'] - 15, $text_coler, $base['font_ulr'], '生成时间：' . $params['table_time']);
         $save_path = $base['file_path'] . $params['file_name'];
@@ -125,6 +137,19 @@ class ImageController extends Controller
             mkdir($base['file_path'], 0777, true);//可创建多级目录
         }
         imagepng($img, $save_path);//输出图片，输出png使用imagepng方法，输出gif使用imagegif方法
+        $file_puth = public_path() . '/' . $save_path;
+        $arr = [
+            'chatid' => $push['flock_sn'],
+            'data' => app('api')->withRealException()->pushingDingImage($file_puth)['media_id'],
+        ];
+        $dataInfo = app('api')->withRealException()->pushingDing($arr);
+        $dataInfo['staff_sn'] = $request->user()->staff_sn;
+        $dataInfo['staff_name'] = $request->user()->realname;
+        $dataInfo['ding_flock_sn'] = $push->flock_sn;
+        $dataInfo['ding_flock_name'] = $push->flock_name;
+        $dataInfo['pushing_info'] = $file_puth;
+        $this->storePushingLog($dataInfo);
+        return response('',201);
     }
 
     protected function text($array)
@@ -160,6 +185,18 @@ class ImageController extends Controller
     public function countStaffImage(Request $request)
     {
 
+    }
+
+    protected function storePushingLog($arr)
+    {
+        $this->pushingLogModel->insert([
+            'staff_sn' => $arr['staff_sn'],
+            'staff_name' => $arr['staff_name'],
+            'ding_flock_sn' => $arr['ding_flock_sn'],
+            'ding_flock_name' => $arr['ding_flock_name'],
+            'is_success' => $arr['errmsg'] == 'ok' ? 1 : 0,
+            'pushing_info' => $arr['pushing_info'],
+        ]);
     }
 
     public function countDepartmentImage(Request $request)

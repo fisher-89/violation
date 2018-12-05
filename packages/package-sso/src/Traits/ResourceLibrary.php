@@ -161,4 +161,14 @@ trait ResourceLibrary
         }
         return $this->get('api/department/get_tree/' . $params);
     }
+
+    public function pushingDing($arr)
+    {
+        return $this->postDing('/chat/send', $arr, [], 2);
+    }
+
+    public function pushingDingImage($data)
+    {
+        return $this->postDingImage('/media/upload', $data, [], 2);
+    }
 }

@@ -13,9 +13,9 @@ class CreatePunishTable extends Migration
      */
     public function up()
     {
-        Schema::create('rule_types',function(Blueprint $table){
+        Schema::create('rule_types', function (Blueprint $table) {
             $table->tinyIncrements('id');
-            $table->char('name',10)->comment('分类名称');
+            $table->char('name', 10)->comment('分类名称');
             $table->unsignedTinyInteger('district')->comment('实用区域1:办公室,2:市场');
             $table->unsignedSmallInteger('sort')->comment('排序')->default(99);
         });
@@ -64,18 +64,18 @@ class CreatePunishTable extends Migration
             $table->foreign('rule_id')->references('id')->on('rules');
         });
 
-        Schema::create('count_department',function(Blueprint $table){
+        Schema::create('count_department', function (Blueprint $table) {
             $table->increments('id');
             $table->char('department_name', 10)->comment('被大爱部门');
             $table->unsignedSmallInteger('parent_id')->comment('父级id')->nullable();
-            $table->char('full_name',100)->comment('部门全称')->index();
+            $table->char('full_name', 100)->comment('部门全称')->index();
             $table->char('month', 6)->comment('月份')->nullable();
             $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额')->nullable();
             $table->unsignedSmallInteger('score')->comment('分值')->nullable();
         });
 
-        Schema::create('count_staff',function(Blueprint $table){
+        Schema::create('count_staff', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('department_id')->comment('部门id');
             $table->unsignedMediumInteger('staff_sn')->comment('被大爱者编号');
@@ -88,7 +88,7 @@ class CreatePunishTable extends Migration
             $table->foreign('department_id')->references('id')->on('count_department');
         });
 
-        Schema::create('count_has_punish',function(Blueprint $table){
+        Schema::create('count_has_punish', function (Blueprint $table) {
             $table->unsignedInteger('count_id')->index();
             $table->unsignedInteger('punish_id')->index();
             $table->primary(['count_id', 'punish_id'], 'count_id_punish_id');
@@ -108,6 +108,27 @@ class CreatePunishTable extends Migration
             $table->char('name');
             $table->char('code');
         });
+
+        Schema::create('pushing', function (Blueprint $table) {
+            $table->increments('id');
+            $table->char('staff_sn', 6)->comment('推送员工编号');
+            $table->char('staff_name', 10)->comment('推送员工姓名');
+            $table->string('flock_name',20)->comment('群名称');
+            $table->string('flock_sn',50)->comment('推送的钉钉群号');
+            $table->unsignedTinyInteger('is_lock')->comment('是否锁定 1:锁定，0：未锁定')->default(0);
+        });
+
+        Schema::create('pushing_log', function (Blueprint $table) {
+            $table->increments('id');
+            $table->char('staff_sn', 6)->comment('推送员工编号');
+            $table->char('staff_name', 10)->comment('推送员工姓名');
+            $table->string('ding_flock_sn', 50)->comment('推送的钉钉号');
+            $table->string('ding_flock_name', 20)->comment('推送的钉钉号名称');
+            $table->unsignedTinyInteger('is_success')->comment('1:成功，0:失败');
+            $table->text('pushing_info')->comment('推送信息')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     /**
@@ -117,6 +138,8 @@ class CreatePunishTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('pushing_log');
+        Schema::dropIfExists('pushing');
         Schema::dropIfExists('variables');
         Schema::dropIfExists('signs');
         Schema::dropIfExists('count_has_punish');

@@ -73,6 +73,9 @@ trait UserHelper
         try {
             if ($point == 1) {
                 return $this->unwrapResponse($this->getHttpClient($this->getPointOptions())->{$method}($endpoint, $options));
+            } else if ($point == 2) {
+                return $this->unwrapResponse($this->getHttpClient($this->getDingOptions())->{$method}($endpoint .
+                    '?access_token=' . $this->get('api/get_dingtalk_access_token')['message'], $options));
             } else {
                 return $this->unwrapResponse($this->getHttpClient($this->getBaseOptions())->{$method}($endpoint, $options));
             }
@@ -90,6 +93,16 @@ trait UserHelper
             'base_uri' => method_exists($this, 'getPointUri') ? $this->getPointUri() : '',
             'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
         ];
+        return $options;
+    }
+
+    protected function getDingOptions()
+    {
+        $options = [
+            'base_uri' => method_exists($this, 'getDingUri') ? $this->getDingUri() : '',
+            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
+        ];
+
         return $options;
     }
 

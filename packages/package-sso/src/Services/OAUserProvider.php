@@ -28,6 +28,11 @@ class OAUserProvider implements UserProvider
         return config('sso.point_host');
     }
 
+    protected function getDingUri():string
+    {
+        return config('sso.ding_host');
+    }
+
     public function retrieveById($identifier)
     {
         $user = $this->get('/api/staff/'.$identifier);

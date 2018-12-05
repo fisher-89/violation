@@ -60,6 +60,11 @@ class RequestSSOService
         return config('sso.point_host');
     }
 
+    protected function getDingUri(): string
+    {
+        return config('sso.ding_host');
+    }
+
     public function get($endpoint, $query = [], $header = [])
     {
         return $this->request('get', $endpoint, [
@@ -73,6 +78,40 @@ class RequestSSOService
         return $this->request('post', $endpoint, [
             'headers' => array_merge($header, $this->headers),
             'json' => $params,
+        ], $point);
+    }
+
+    public function postDing($endpoint, $params = [], $header = [], $point = '')
+    {
+        return $this->request('post', $this->getDingUri() . $endpoint, [
+            'Content-Type ' => 'application/json',
+            'json' => [
+                'chatid' => $params['chatid'],
+                'msg' => [
+                    'msgtype' => 'image',
+                    'image' => [
+                        'media_id' => $params['data']
+                    ]
+                ],
+            ],
+        ], $point);
+    }
+
+    public function postDingImage($endpoint, $url, $header = [], $point = '')
+    {
+        return $this->request('post', $this->getDingUri() . $endpoint, [//multipart
+            'type' => 'image',
+            'multipart' => [
+                [
+                    'name'     => 'type',
+                    'contents' => 'image',
+                ],
+                [
+                    'name'     => 'media',
+                    'contents' => fopen($url, 'r'),
+                ],
+            ]
+
         ], $point);
     }
 
