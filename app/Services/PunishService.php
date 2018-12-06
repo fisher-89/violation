@@ -51,12 +51,12 @@ class PunishService
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
                 $punish->update(['point_log_id' => $point['id']]);
-                $this->updateCountData($request, $punish, 1);
             } catch (\Exception $exception) {
                 DB::rollBack();
                 abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
+        $this->updateCountData($request, $punish, 1);
         DB::commit();
         $punish->rules = $rule;
         return response($punish, 201);
