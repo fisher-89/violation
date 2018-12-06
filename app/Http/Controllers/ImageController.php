@@ -140,7 +140,7 @@ class ImageController extends Controller
         $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path);//图片存储到钉钉
         $arr = [
             'chatid' => $push['flock_sn'],
-            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储发生错误，请联系管理员'),
+            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储发生错误,错误：' . $pushImage['errmsg']),
         ];
         $dataInfo = app('api')->withRealException()->pushingDing($arr);//发送钉钉信息
         $dataInfo['staff_sn'] = $request->user()->staff_sn;
