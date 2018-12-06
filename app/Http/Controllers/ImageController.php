@@ -47,14 +47,14 @@ class ImageController extends Controller
         $text[] = [];
         $params = [
             'row' => count($text),
-            'file_name' => date('YmdHis') .rand(1,9). '大爱记录.png',
+            'file_name' => date('YmdHis') . rand(1, 9) . '大爱记录.png',
             'title' => date('Y-m-d') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => 'image/',//图片保存路径
+            'file_path' => '../storage/app/public/image/',//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -137,19 +137,19 @@ class ImageController extends Controller
             mkdir($base['file_path'], 0777, true);//可创建多级目录
         }
         imagepng($img, $save_path);//输出图片，输出png使用imagepng方法，输出gif使用imagegif方法
-        $file_puth = public_path() . '/' . $save_path;
+        $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path);//图片存储到钉钉
         $arr = [
             'chatid' => $push['flock_sn'],
-            'data' => app('api')->withRealException()->pushingDingImage($file_puth)['media_id'],
+            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储发生错误，请联系管理员'),
         ];
-        $dataInfo = app('api')->withRealException()->pushingDing($arr);
+        $dataInfo = app('api')->withRealException()->pushingDing($arr);//发送钉钉信息
         $dataInfo['staff_sn'] = $request->user()->staff_sn;
         $dataInfo['staff_name'] = $request->user()->realname;
         $dataInfo['ding_flock_sn'] = $push->flock_sn;
         $dataInfo['ding_flock_name'] = $push->flock_name;
-        $dataInfo['pushing_info'] = $file_puth;
-        $this->storePushingLog($dataInfo);
-        return response('',201);
+        $dataInfo['pushing_info'] = config('app.url') . '/storage/image/' . $params['file_name'];
+        $this->storePushingLog($dataInfo);//存储发送记录
+        return response('', 201);
     }
 
     protected function text($array)
@@ -187,9 +187,15 @@ class ImageController extends Controller
 
     }
 
+    public function pushingLog(Request $request)
+    {
+        return $this->pushingLogModel->where('staff_sn', $request->user()->staff_sn)
+            ->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+    }
+
     protected function storePushingLog($arr)
     {
-        $this->pushingLogModel->insert([
+        $this->pushingLogModel->create([
             'staff_sn' => $arr['staff_sn'],
             'staff_name' => $arr['staff_name'],
             'ding_flock_sn' => $arr['ding_flock_sn'],

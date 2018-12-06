@@ -60,7 +60,7 @@ trait UserHelper
     }
 
     /**
-     * Make a http request.
+     * Make a http request. 默认:OA ,积分制:1，钉钉:2
      *
      * @param string $method
      * @param string $endpoint
