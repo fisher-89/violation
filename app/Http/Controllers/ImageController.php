@@ -250,11 +250,6 @@ class ImageController extends Controller
         return implode('-', $array);
     }
 
-    public function countStaffImage(Request $request)
-    {
-
-    }
-
     /**
      * 推送记录
      *
@@ -282,18 +277,6 @@ class ImageController extends Controller
             'is_success' => $arr['errmsg'] == 'ok' ? 1 : 0,
             'pushing_info' => $arr['pushing_info'],
         ]);
-    }
-
-    public function countDepartmentImage(Request $request)
-    {
-        $font = "c:/windows/fonts/msyh.ttc";//字体类型
-        $img = imagecreate(620, 15);//创建图片
-        imagecolorallocate($img, 0xff, 0xff, 0xff);//背景颜色
-        $black = imagecolorallocate($img, 0x00, 0x00, 0x00);//字体颜色
-        imagettftext($img, 12, 0, 0, 16, $black, $font, '123456');//将ttf文字写到图片中
-        header('Content-Type: image/png');//发送头信息
-        imagepng($img, 'image.png', '100');//输出图片
-        imagedestroy($img);
     }
 
     /**
