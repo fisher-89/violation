@@ -103,15 +103,28 @@ class RequestSSOService
             'type' => 'image',
             'multipart' => [
                 [
-                    'name'     => 'type',
+                    'name' => 'type',
                     'contents' => 'image',
                 ],
                 [
-                    'name'     => 'media',
+                    'name' => 'media',
                     'contents' => fopen($url, 'r'),
                 ],
             ]
+        ], $point);
+    }
 
+    public function postDingSentinel($endpoint, $arr, $header = [], $point = '')
+    {
+        return $this->request('post', $this->getDingUri() . $endpoint, [
+            'sender' => '0156340823848080042',
+            'cid' => '',
+            'msg' => [
+                'msgtype' => 'image',
+                'image' => [
+                    'media_id' => $arr['data']
+                ]
+            ],
         ], $point);
     }
 

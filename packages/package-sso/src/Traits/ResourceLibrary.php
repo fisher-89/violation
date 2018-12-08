@@ -163,7 +163,7 @@ trait ResourceLibrary
     }
 
     /**
-     * 推送钉钉消息
+     * 推送钉钉群消息
      *
      * @param $arr
      * @return mixed
@@ -171,6 +171,17 @@ trait ResourceLibrary
     public function pushingDing($arr)
     {
         return $this->postDing('/chat/send', $arr, [], 2);
+    }
+
+    /**
+     * 推送单人------接口待完善
+     *
+     * @param $arr
+     * @return mixed
+     */
+    public function pushDingSentinel($arr)
+    {
+        return $this->postDingSentinel('/message/send_to_conversation', $arr, [], 2);
     }
 
     /**向钉钉存储文件

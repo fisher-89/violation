@@ -25,6 +25,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->delete("/{id}", Controllers\PunishController::class . "@delete");//删除
         $admin->post("/pay", Controllers\PunishController::class . "@listPaymentMoney");//展示页面用单向更新已支付
         $admin->get("/both-pay/{id}", Controllers\PunishController::class . "@detailedPagePayment");//详细页面用双向改变支付状态
+        $admin->get('/pushing/auth',Controllers\ImageController::class.'@pushingAuthList');//推送权限列表
         $admin->get('/image/{id}', Controllers\ImageController::class . '@punishImage');//钉钉推送
         $admin->get('/pushing-log',Controllers\ImageController::class.'@pushingLog');//钉钉推送记录列表
         $admin->post("/money", Controllers\CountController::class . "@money");//金额

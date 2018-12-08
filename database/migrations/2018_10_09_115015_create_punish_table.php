@@ -129,6 +129,16 @@ class CreatePunishTable extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        Schema::create('pushing_config',function(Blueprint $table){
+            $table->tinyIncrements('id');
+            $table->char('staff_sn',6)->comment('推送人编号')->index();
+            $table->char('staff_name',10)->comment('推送人姓名');
+            $table->tinyInteger('action')->comment('功能 1：群推送，2：单人推送，3：月结推送');
+            $table->string('action_name')->comemnt('功能名称');
+            $table->dateTime('action_at')->comment('月结推送时间')->nullable();
+            $table->tinyInteger('is_open')->comment('1:开启，0关闭');
+        });
     }
 
     /**

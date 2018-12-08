@@ -14,6 +14,6 @@ class Pushing extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'staff_sn', 'flock_name', 'flock_sn', 'is_lock'
+        'staff_sn', 'staff_name', 'flock_name', 'flock_sn', 'is_lock'
     ];
 }
