@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PushCollection;
 use App\Models\CountDepartment;
 use App\Models\Pushing;
 use App\Models\PushingConfig;
@@ -303,6 +304,12 @@ class ImageController extends Controller
      */
     public function pushingAuthList(Request $request)
     {
-        return $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn, 'is_lock' => 0])->get();
+        $list = $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn, 'is_lock' => 0])->get();
+        if (isset($list['data'])) {
+            $list['data'] = new PushCollection(collect($list['data']));
+            return $list;
+        } else {
+            return new PushCollection($list);
+        }
     }
 }
