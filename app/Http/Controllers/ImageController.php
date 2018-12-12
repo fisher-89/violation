@@ -48,18 +48,17 @@ class ImageController extends Controller
         if ($push->staff_sn != $staffSn) {
             abort(401, '暂无推送该群的权限');
         }
-        $punish = $this->punishModel->when($request->all() == false, function ($query) {
+        $all = $request->all();
+        $punish = $this->punishModel->when($all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         if (count($punish) == 0) {
-            $punish = $this->punishModel->when($request->all() == false, function ($query) {
+            $punish = $this->punishModel->when($all() == false, function ($query) {
                 $query->whereDate('created_at', date('Y-m-d', strtotime("-1 day")));
             })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         }
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
-        $all = $request->all();
-        $watermark = isset($all['watermark_']) ? $all['watermark_'] : 0;
-        $save_path = $this->pushImageDispose($text,$watermark);//推送的图片处理
+        $save_path = $this->pushImageDispose($text);//推送的图片处理
         $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
         $arr = [
             'chatid' => $push['flock_sn'],
@@ -82,7 +81,7 @@ class ImageController extends Controller
     }
 
 //等待hr和钉钉同步开发
-    protected function sentinelPush($arr,$watermark)
+    protected function sentinelPush($arr, $watermark)
     {
         foreach ($arr as $key => $value) {
             foreach ($arr as $k => $val) {
@@ -91,9 +90,9 @@ class ImageController extends Controller
                 }
             }
             if (isset($staff)) {
-                $save_path = $this->pushImageDispose($staff,$watermark);
+                $save_path = $this->pushImageDispose($staff);
             } else {
-                $save_path = $image = $this->pushImageDispose($value,$watermark);
+                $save_path = $image = $this->pushImageDispose($value);
             }
             $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
             $arr = [
@@ -110,7 +109,7 @@ class ImageController extends Controller
      * @param $text
      * @return mixed
      */
-    protected function pushImageDispose($text,$watermark)
+    protected function pushImageDispose($text)
     {
         $text[] = [];
         $params = [
@@ -168,25 +167,23 @@ class ImageController extends Controller
         $border_coler = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
         $white_coler = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
         imagefill($img, 0, 0, $bg_color);//填充图片背景色
-        if($watermark == 1){
-            $logo = 'image/login-logo.png';//水印图片
-            $watermark = imagecreatefromstring(file_get_contents($logo));
-            list($logoWidth, $logoHight, $logoType) = getimagesize($logo);
-            $x_length = $base['img_width'] - 10;
-            $y_length = $base['img_height'] - 10;
-            $w = imagesx($watermark);
-            $h = imagesy($watermark);
-            $cut = imagecreatetruecolor($w, $h);
-            $white = imagecolorallocatealpha($cut, 255, 255, 255, 0);
-            imagefill($cut, 0, 0, $white);
-            imagecopy($cut, $watermark, 0, 0, 0, 0, $w, $h);
-            for ($x = 0; $x < $x_length; $x++) {
-                for ($y = 0; $y < $y_length; $y++) {
-                    imagecopymerge($img, $cut, $x, $y, 0, 0, $logoWidth, $logoHight, 5);//pct  是水印色差深度
-                    $y += $logoHight;
-                }
-                $x += $logoWidth;
+        $logo = 'image/login-logo.png';//水印图片
+        $watermark = imagecreatefromstring(file_get_contents($logo));
+        list($logoWidth, $logoHight, $logoType) = getimagesize($logo);
+        $x_length = $base['img_width'] - 10;
+        $y_length = $base['img_height'] - 10;
+        $w = imagesx($watermark);
+        $h = imagesy($watermark);
+        $cut = imagecreatetruecolor($w, $h);
+        $white = imagecolorallocatealpha($cut, 255, 255, 255, 0);
+        imagefill($cut, 0, 0, $white);
+        imagecopy($cut, $watermark, 0, 0, 0, 0, $w, $h);
+        for ($x = 0; $x < $x_length; $x++) {
+            for ($y = 0; $y < $y_length; $y++) {
+                imagecopymerge($img, $cut, $x, $y, 0, 0, $logoWidth, $logoHight, 5);//pct  是水印色差深度
+                $y += $logoHight;
             }
+            $x += $logoWidth;
         }
         //先填充一个黑色的大块背景
 //        imagefilledrectangle($img, $base['border'], $base['border'] + $base['title_height'],
