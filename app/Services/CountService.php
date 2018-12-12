@@ -37,14 +37,14 @@ class CountService
     public function generate($arr, $type)
     {
         $signs = $this->signsModel->get();
-        $equation = $this->ruleModel->where('id', $arr['rule_id'])->value($type);//获取公式.
+        $equation = $this->ruleModel->where('id', $arr['ruleId'])->value($type);//获取公式.
         if ($equation == '') {
             return ['status' => 'defined', 'msg' => '请自定义数据'];
         }
         $variable = $this->variableModel->get();//系统函数
         $systemArray = explode(',', $equation);
         $repeatedly = $this->operator($signs, implode($systemArray));
-        $SystemVariables = $this->parameters($variable, $repeatedly);
+        $SystemVariables = $this->parameters($variable, $repeatedly, $arr);
         $output = $this->variable($SystemVariables);
         if (preg_match('/\A-Za-z/', $output)) {
             abort(500, '公式运算出错：包含非可运算数据');
@@ -78,9 +78,10 @@ class CountService
      * @param $repeatedly
      * @return null|string|string[]
      */
-    protected function parameters($variable, $repeatedly)
+    protected function parameters($variable, $repeatedly, $arr)
     {
-        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly) {
+        $violateAt = $arr['violateAt'];
+        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly, $violateAt) {
             preg_match_all('/{{(\w+)}}/', $repeatedly, $operation);
             foreach ($variable as $items) {
                 if ($items['key'] === $query[1]) {
@@ -110,14 +111,9 @@ class CountService
      * @param $staffSn
      * @return int
      */
-    public function countRuleNum($ruleId, $staffSn)
+    public function countRuleNum($ruleId, $staffSn, $violateAt)
     {
-        $where = [
-            'staff_sn' => $staffSn,
-            'rule_id' => $ruleId,
-            'month' => date('Ym'),
-        ];
-        return $this->punishModel->where($where)->count() + 1;
+        return $this->punishModel->where(['staff_sn' => $staffSn, 'rule_id' => $ruleId, 'month' => date('Ym', strtotime($violateAt)),])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)

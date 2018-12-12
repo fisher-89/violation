@@ -24,7 +24,7 @@ class CountController extends Controller
     {
         $this->moneyVerify($request);
         return 20;
-        $arr = ['staff_sn' => $request->staff_sn, 'rule_id' => $request->rule_id, 'violate_at' => $request->violate_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         return $this->countService->generate($arr, 'money');
     }
 
@@ -37,7 +37,7 @@ class CountController extends Controller
     {
         $this->moneyVerify($request);
         return 10;
-        $arr = ['staff_sn' => $request->staff_sn, 'rule_id' => $request->rule_id, 'violate_at' => $request->violate_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         return $this->countService->generate($arr, 'score');
     }
 

@@ -269,7 +269,7 @@ class PunishService
         }
         try {
             DB::beginTransaction();
-            $this->reduceCount($punish);//todo 减原来的分,1.找已付款高于金额的问题，2.计算公式
+            $this->reduceCount($punish);
             if ($punish->point_log_id == true) {
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
             }
