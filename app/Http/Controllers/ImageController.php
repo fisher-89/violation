@@ -48,12 +48,11 @@ class ImageController extends Controller
         if ($push->staff_sn != $staffSn) {
             abort(401, '暂无推送该群的权限');
         }
-        $all = $request->all();
-        $punish = $this->punishModel->when($all() == false, function ($query) {
+        $punish = $this->punishModel->when($request->all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         if (count($punish) == 0) {
-            $punish = $this->punishModel->when($all() == false, function ($query) {
+            $punish = $this->punishModel->when($request->all() == false, function ($query) {
                 $query->whereDate('created_at', date('Y-m-d', strtotime("-1 day")));
             })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         }
@@ -75,13 +74,13 @@ class ImageController extends Controller
 //            echo response('', 201);
 //            fastcgi_finish_request();    todo 待完善
 //            set_time_limit(60);
-//            $this->sentinelPush($punish, $watermark);
+//            $this->sentinelPush($punish);
 //        }
         return response('', 201);
     }
 
 //等待hr和钉钉同步开发
-    protected function sentinelPush($arr, $watermark)
+    protected function sentinelPush($arr)
     {
         foreach ($arr as $key => $value) {
             foreach ($arr as $k => $val) {
@@ -163,48 +162,48 @@ class ImageController extends Controller
         ];
         $img = imagecreatetruecolor($base['img_width'], $base['img_height']);//创建指定尺寸图片
         $bg_color = imagecolorallocate($img, 255, 255, 255);//设定图片背景色
-        $text_coler = imagecolorallocate($img, 51, 51, 51);//设定文字颜色
-        $border_coler = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
-        $white_coler = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
+        $text_color = imagecolorallocate($img, 51, 51, 51);//设定文字颜色
+        $border_color = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
+        $white_color = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
         imagefill($img, 0, 0, $bg_color);//填充图片背景色
-        $logo = 'image/login-logo.png';//水印图片
+        $logo = 'image/bg.png';//水印图片
         $watermark = imagecreatefromstring(file_get_contents($logo));
-        list($logoWidth, $logoHight, $logoType) = getimagesize($logo);
-        $x_length = $base['img_width'] - 10;
-        $y_length = $base['img_height'] - 10;
+        list($logoWidth, $logoHeight, $logoType) = getimagesize($logo);
+//        $x_length = $base['img_width'] - 10;
+//        $y_length = $base['img_height'] - 10;
         $w = imagesx($watermark);
         $h = imagesy($watermark);
         $cut = imagecreatetruecolor($w, $h);
         $white = imagecolorallocatealpha($cut, 255, 255, 255, 0);
         imagefill($cut, 0, 0, $white);
         imagecopy($cut, $watermark, 0, 0, 0, 0, $w, $h);
-        for ($x = 0; $x < $x_length; $x++) {
-            for ($y = 0; $y < $y_length; $y++) {
-                imagecopymerge($img, $cut, $x, $y, 0, 0, $logoWidth, $logoHight, 5);//pct  是水印色差深度
-                $y += $logoHight;
+        for ($x = 0; $x < $base['img_width']; $x++) {
+            for ($y = 0; $y < $base['img_height']; $y++) {
+                imagecopymerge($img, $cut, $x, $y, 0, 0, $logoWidth, $logoHeight, 5);//pct  是水印色差深度
+                $y += $logoHeight;
             }
             $x += $logoWidth;
         }
         //先填充一个黑色的大块背景
 //        imagefilledrectangle($img, $base['border'], $base['border'] + $base['title_height'],
-//            $base['img_width'] - $base['border'], $base['img_height'] - $base['border'], $border_coler);//画矩形
+//            $base['img_width'] - $base['border'], $base['img_height'] - $base['border'], $border_color);//画矩形
         //再填充一个小两个像素的 背景色区域，形成一个两个像素的外边框         imagefill($img,20,0,imagecolorallocate($img, 30, 80, 162));
         imagefilledrectangle($img, $base['border'], $base['border'] + $base['title_height'],
-            $base['img_width'] - $base['border'], $base['border'] + $base['title_height'] + $base['row_height'], $white_coler);//画矩形
+            $base['img_width'] - $base['border'], $base['border'] + $base['title_height'] + $base['row_height'], $white_color);//画矩形
         //画表格纵线 及 写入表头文字
         foreach ($base['column_x_arr'] as $key => $x) {
-//            imageline($img, $x, $border_top, $x, $border_bottom, $white_coler);//画纵线
+//            imageline($img, $x, $border_top, $x, $border_bottom, $white_color);//画纵线
             imagettftext($img, $base['header_size'], 0, $x - $base['column_text_offset_arr'][$key] + 1,
                 $border_top + $base['row_height'] - 14, $bg_color, $base['font_ulr'], $base['table_header'][$key]);//写入表头文字
         }
         //画表格横线
         foreach ($params['data'] as $key => $item) {
             $border_top += $base['row_height'];
-            imageline($img, $base['border'], $border_top, $base['img_width'] - $base['border'], $border_top, $border_coler);
+            imageline($img, $base['border'], $border_top, $base['img_width'] - $base['border'], $border_top, $border_color);
             $sub = 0;
             foreach ($item as $value) {
                 imagettftext($img, $base['text_size'], 0, $base['column_x_arr'][$sub] - $base['row_text_offset_arr'][$sub],
-                    $border_top + $base['row_height'] - 15/*行高位置*/, $text_coler, $base['font_ulr'], $value);//写入data数据
+                    $border_top + $base['row_height'] - 15/*行高位置*/, $text_color, $base['font_ulr'], $value);//写入data数据
                 $sub++;
             }
         }
@@ -213,9 +212,9 @@ class ImageController extends Controller
         $title_fout_width = $title_fout_box[2] - $title_fout_box[0];//右下角 X 位置 - 左下角 X 位置 为文字宽度
         $title_fout_height = $title_fout_box[1] - $title_fout_box[7];//左下角 Y 位置- 左上角 Y 位置 为文字高度
         //居中写入标题
-        imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_coler, $base['font_ulr'], $params['title']);
+        imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'], $base['img_height'] - 15, $text_coler, $base['font_ulr'], '生成时间：' . $params['table_time']);
+        imagettftext($img, 8, 0, $base['border'], $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time']);
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
