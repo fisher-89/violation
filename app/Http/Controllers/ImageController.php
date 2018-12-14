@@ -88,11 +88,7 @@ class ImageController extends Controller
                     $staff[] = $val;
                 }
             }
-            if (isset($staff)) {
-                $save_path = $this->pushImageDispose($staff);
-            } else {
-                $save_path = $image = $this->pushImageDispose($value);
-            }
+            $save_path = $this->pushImageDispose(isset($staff) ? $staff : $value);
             $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
             $arr = [
 //                'chatid' => $push['flock_sn'],
@@ -113,7 +109,7 @@ class ImageController extends Controller
         $text[] = [];
         $params = [
             'row' => count($text),
-            'file_name' => date('YmdHis') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '大爱记录.png',
+            'file_name' => date('YmdHis') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '.png',
             'title' => date('Y-m-d') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
@@ -140,7 +136,6 @@ class ImageController extends Controller
         ];
         $base['img_width'] = $base['border'] * 2 + $base['filed_staff_name_width'] + $base['filed_department_name_width'] + $base['filed_billing_at_width'] +
             $base['filed_rules_width'] + $base['filed_violate_at_width'] + $base['filed_quantity_width'] + $base['filed_money_width'];//图片宽度
-
         $base['img_height'] = $params['row'] * $base['row_height'] + $base['border'] * 2 + $base['title_height'];//图片高度
         $border_top = $base['border'] + $base['title_height'];//表格顶部高度
         $border_bottom = $base['img_height'] - $base['border'];//表格底部高度
@@ -169,8 +164,6 @@ class ImageController extends Controller
         $logo = 'image/bg.png';//水印图片
         $watermark = imagecreatefromstring(file_get_contents($logo));
         list($logoWidth, $logoHeight, $logoType) = getimagesize($logo);
-//        $x_length = $base['img_width'] - 10;
-//        $y_length = $base['img_height'] - 10;
         $w = imagesx($watermark);
         $h = imagesy($watermark);
         $cut = imagecreatetruecolor($w, $h);
