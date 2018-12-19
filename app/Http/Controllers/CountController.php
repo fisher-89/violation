@@ -23,7 +23,6 @@ class CountController extends Controller
     public function money(Request $request)
     {
         $this->moneyVerify($request);
-        return 20;
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         return $this->countService->generate($arr, 'money');
     }
@@ -36,7 +35,6 @@ class CountController extends Controller
     public function score(Request $request)
     {
         $this->moneyVerify($request);
-        return 10;
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         return $this->countService->generate($arr, 'score');
     }

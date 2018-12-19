@@ -106,8 +106,9 @@ class PunishController extends Controller
     protected function punishStoreVerify($request, $staff, $punisher)
     {
         $id = $request->route('id');
-        $data['staff_sn'] = $request->staff_sn;
-        $data['rule_id'] = $request->rule_id;
+        $data['staffSn'] = $request->staff_sn;
+        $data['violateAt'] = $request->violate_at;
+        $data['ruleId'] = $request->rule_id;
         $punish = DB::table('punish')->where('id', $id)->first();
         $this->validate($request,
             [
@@ -140,20 +141,20 @@ class PunishController extends Controller
                 'billing_name' => 'required|max:10',
                 'violate_at' => 'required|date|after:start_date',//违纪日期
                 'money' => ['required', 'numeric',
-//                    function ($attribute, $value, $event) use ($data) {
-//                        $now = $this->produceMoneyService->generate($data,'money'); todo 无法使用
-//                        if ($now != $value) {
-//                            return $event('金额被改动');
-//                        }
-//                    }
+                    function ($attribute, $value, $event) use ($data) {
+                        $now = $this->produceMoneyService->generate($data,'money');
+                        if ($now != $value) {
+                            return $event('金额被改动');
+                        }
+                    }
                 ],//大爱金额
                 'score' => ['required', 'numeric',
-//                    function ($attribute, $value, $event) use ($data) {
-//                        $score = $this->produceMoneyService->generate($data, 'score');  todo  暂时无法使用
-//                        if ($score != $value) {
-//                            return $event('分值被改动');
-//                        }
-//                    }
+                    function ($attribute, $value, $event) use ($data) {
+                        $score = $this->produceMoneyService->generate($data, 'score');
+                        if ($score != $value) {
+                            return $event('分值被改动');
+                        }
+                    }
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
                 'paid_at' => 'date|nullable',

@@ -102,8 +102,9 @@ class ExcelController extends Controller
             if ((bool)$check === false) {
                 $this->error['大爱原因'][] = '错误';
             }
-            $msg['staff_sn'] = isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null;
-            $msg['rule_id'] = $check;
+            $msg['staffSn'] = isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null;
+            $msg['violateAt'] = $res[$i][4];
+            $msg['ruleId'] = $check;
             $sql = [
                 'rule_id' => $check,
                 'staff_sn' => isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null,
@@ -119,8 +120,8 @@ class ExcelController extends Controller
                 'billing_name' => isset($punish['realname']) ? $punish['realname'] : null,
                 'billing_at' => $res[$i][2],
                 'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($oaData['staff_sn'], $check) : null,
-                'money' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'money', $oaData) : null,
-                'score' => $msg['rule_id'] != null && $msg['staff_sn'] != null ? $this->produceMoneyService->generate($msg, 'score', $oaData) : null,
+                'money' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($msg, 'money', $oaData) : null,
+                'score' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($msg, 'score', $oaData) : null,
                 'violate_at' => $res[$i][4],
                 'has_paid' => is_numeric($res[$i][7]) ? (int)$res[$i][7] : $res[$i][7],
                 'paid_at' => $res[$i][7] == 1 ? $res[$i][8] : null,
