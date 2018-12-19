@@ -56,6 +56,7 @@ class PunishService
                 abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
+        $request->brand_name = $OAData['brand']['name'];
         $this->updateCountData($request, $punish, 1);
         DB::commit();
         $punish->rules = $rule;
@@ -197,6 +198,7 @@ class PunishService
                 if ($department == false) {
                     $department = $this->countDepartmentModel->create([
                         'department_name' => $item,
+                        'brand_name' => $request->brand_name,
                         'parent_id' => isset($arrId) ? end($arrId) : null,
                         'full_name' => isset($info) ? implode('-', $info) . '-' . $item : $item,
                         'month' => $punish->month,
@@ -283,6 +285,7 @@ class PunishService
                 }
                 $punish->update(['point_log_id' => $point['id']]);
             }
+            $request->brand_name = $staff['brand']['name'];
             $this->updateCountData($request, $punish, 0);
             DB::commit();
         } catch (\Exception $exception) {
@@ -464,7 +467,7 @@ class PunishService
     protected function reduceCount($punish)
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
-        if($countStaff == true) {
+        if ($countStaff == true) {
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
                 'score' => $countStaff->score - $punish->score,

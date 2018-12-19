@@ -32,7 +32,7 @@ class TotalService
      */
     public function getStaff($request)
     {
-        return $this->countStaffModel->with('countHasPunish.punish')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->countStaffModel->with(['countDepartment', 'countHasPunish.punish'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
