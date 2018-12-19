@@ -22,4 +22,9 @@ class CountStaff extends Model
     {
         return $this->hasMany(CountHasPunish::class, 'count_id', 'id');
     }
+
+    public function countDepartment()
+    {
+        return $this->hasOne(CountDepartment::class,'id','department_id');
+    }
 }

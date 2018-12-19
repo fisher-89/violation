@@ -135,6 +135,7 @@ class ExcelController extends Controller
             $this->excelDataVerify($object);
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
+                $object->brand_name = $oaData['brand']['name'];
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
                     $point[] = $this->pointSql($rule, $object, $oaData, $data->id);
