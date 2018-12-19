@@ -196,6 +196,7 @@ class PunishService
                 ])->first();
                 if ($department == false) {
                     $department = $this->countDepartmentModel->create([
+                        'department_id' => $punish->department_id,
                         'department_name' => $item,
                         'parent_id' => isset($arrId) ? end($arrId) : null,
                         'full_name' => isset($info) ? implode('-', $info) . '-' . $item : $item,
@@ -228,7 +229,7 @@ class PunishService
                 $arrDepartment[] = $items;
             }
         }
-        return $department->id;
+        return $department->did;
     }
 
     /**
