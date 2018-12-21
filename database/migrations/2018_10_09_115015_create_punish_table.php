@@ -16,8 +16,6 @@ class CreatePunishTable extends Migration
         Schema::create('rule_types', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->char('name', 10)->comment('分类名称');
-            $table->unsignedTinyInteger('district')->comment('实用区域1:办公室,2:市场');
-            $table->unsignedSmallInteger('sort')->comment('排序')->default(99);
         });
 
         Schema::create('rules', function (Blueprint $table) {

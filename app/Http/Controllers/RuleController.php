@@ -204,12 +204,8 @@ class RuleController extends Controller
         $this->validate($request,[
             'name'=>[$id == false ? 'unique:rule_types,name' : Rule::unique('rule_types','name')
                 ->whereNotIn('id',explode(' ', $id)) ,'required','max:10'],
-            'district'=>'required|numeric|boolean',
-            'sort'=>'numeric|max:32767',
             ],[],[
             'name'=>'名字',
-            'district'=>'实用范围',
-            'sort'=>'排序',
             ]);
     }
 }

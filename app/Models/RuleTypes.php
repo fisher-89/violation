@@ -15,5 +15,5 @@ class RuleTypes extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['name', 'district', 'sort'];
+    protected $fillable = ['name'];
 }
