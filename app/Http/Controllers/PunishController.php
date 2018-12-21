@@ -112,8 +112,8 @@ class PunishController extends Controller
         $punish = DB::table('punish')->where('id', $id)->first();
         $this->validate($request,
             [
-                'rule_id' => ['required', 'numeric', 'exists:rules,id', function($attribute, $value, $event)use($id,$punish){
-                    if($id == true && $value != $punish->rule_id){
+                'rule_id' => ['required', 'numeric', 'exists:rules,id', function ($attribute, $value, $event) use ($id, $punish) {
+                    if ($id == true && $value != $punish->rule_id) {
                         return $event('被大爱原因不能被修改');
                     }
                 }],//制度表I
@@ -141,16 +141,16 @@ class PunishController extends Controller
                 'billing_name' => 'required|max:10',
                 'violate_at' => 'required|date|after:start_date',//违纪日期
                 'money' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data) {
-                        $now = $this->produceMoneyService->generate($data,'money');
+                    function ($attribute, $value, $event) use ($data, $staff) {
+                        $now = $this->produceMoneyService->generate($staff, $data, 'money');
                         if ($now != $value) {
                             return $event('金额被改动');
                         }
                     }
                 ],//大爱金额
                 'score' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data) {
-                        $score = $this->produceMoneyService->generate($data, 'score');
+                    function ($attribute, $value, $event) use ($data, $staff) {
+                        $score = $this->produceMoneyService->generate($staff, $data, 'score');
                         if ($score != $value) {
                             return $event('分值被改动');
                         }
@@ -158,7 +158,7 @@ class PunishController extends Controller
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
                 'paid_at' => 'date|nullable',
-                'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id,$punish) {
+                'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id, $punish) {
                     if ($id == true) {
                         if ($punish->sync_point != $value) {
                             return $event('积分同步状态不能修改');

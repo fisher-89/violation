@@ -120,8 +120,8 @@ class ExcelController extends Controller
                 'billing_name' => isset($punish['realname']) ? $punish['realname'] : null,
                 'billing_at' => $res[$i][2],
                 'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($oaData['staff_sn'], $check) : null,
-                'money' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($msg, 'money', $oaData) : null,
-                'score' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($msg, 'score', $oaData) : null,
+                'money' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($oaData, $msg, 'money') : null,
+                'score' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($oaData, $msg, 'score') : null,
                 'violate_at' => $res[$i][4],
                 'has_paid' => is_numeric($res[$i][7]) ? (int)$res[$i][7] : $res[$i][7],
                 'paid_at' => $res[$i][7] == 1 ? $res[$i][8] : null,
@@ -136,6 +136,7 @@ class ExcelController extends Controller
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
                 $object->brand_name = $oaData['brand']['name'];
+                $request->department_id = $oaData['department_id'];
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
                     $point[] = $this->pointSql($rule, $object, $oaData, $data->id);

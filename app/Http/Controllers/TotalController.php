@@ -30,17 +30,6 @@ class TotalController extends Controller
     }
 
     /**
-     * 部门统计数据
-     *
-     * @param Request $request
-     * @return mixed
-     */
-    public function getDepartmentTotal(Request $request)
-    {
-        return $this->totalService->getDepartment($request);
-    }
-
-    /**
      * 单个人支付状态改变
      *
      * @param Request $request

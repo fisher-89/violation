@@ -64,21 +64,10 @@ class CreatePunishTable extends Migration
             $table->foreign('rule_id')->references('id')->on('rules');
         });
 
-        Schema::create('count_department', function (Blueprint $table) {
-            $table->increments('id');
-            $table->char('department_name', 10)->comment('部门');
-            $table->char('brand_name', 10)->comment('品牌');
-            $table->unsignedSmallInteger('parent_id')->comment('父级id')->nullable();
-            $table->char('full_name', 100)->comment('部门全称')->index();
-            $table->char('month', 6)->comment('月份')->nullable();
-            $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
-            $table->unsignedSmallInteger('money')->comment('金额')->nullable();
-            $table->unsignedSmallInteger('score')->comment('分值')->nullable();
-        });
-
         Schema::create('count_staff', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('department_id')->comment('部门id');
+            $table->char('brand_name',10)->comment('品牌名称');
             $table->unsignedMediumInteger('staff_sn')->comment('被大爱者编号');
             $table->char('staff_name', 10)->comment('被大爱者姓名');
             $table->char('month', 6)->comment('月份');
@@ -86,7 +75,6 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
             $table->unsignedTinyInteger('has_settle')->comment('是否结清')->default(0);
-            $table->foreign('department_id')->references('id')->on('count_department');
         });
 
         Schema::create('count_has_punish', function (Blueprint $table) {
@@ -155,7 +143,6 @@ class CreatePunishTable extends Migration
         Schema::dropIfExists('signs');
         Schema::dropIfExists('count_has_punish');
         Schema::dropIfExists('count_staff');
-        Schema::dropIfExists('count_department');
         Schema::dropIfExists('punish');
         Schema::dropIfExists('rules');
         Schema::dropIfExists('rule_types');

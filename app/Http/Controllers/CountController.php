@@ -22,9 +22,10 @@ class CountController extends Controller
      */
     public function money(Request $request)
     {
-        $this->moneyVerify($request);
+        $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
+        $this->moneyVerify($request, $staff);
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
-        return $this->countService->generate($arr, 'money');
+        return $this->countService->generate($staff, $arr, 'money');
     }
 
     /**
@@ -34,19 +35,19 @@ class CountController extends Controller
      */
     public function score(Request $request)
     {
-        $this->moneyVerify($request);
+        $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
+        $this->moneyVerify($request, $staff);
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
-        return $this->countService->generate($arr, 'score');
+        return $this->countService->generate($staff, $arr, 'score');
     }
 
-    public function moneyVerify($request)
+    public function moneyVerify($request, $staff)
     {
         $this->validate($request, [
-            'staff_sn' => ['required', 'numeric', 'digits:6', function ($attribute, $value, $event) {
+            'staff_sn' => ['required', 'numeric', 'digits:6', function ($attribute, $value, $event) use ($staff) {
                 if ((bool)trim($value) == true) {
                     try {
-                        $staffInfo = app('api')->withRealException()->getStaff($value);
-                        if ((bool)$staffInfo === false) {
+                        if ((bool)$staff === false) {
                             return $event('不存在');
                         }
                     } catch (\Exception $exception) {

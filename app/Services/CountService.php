@@ -34,7 +34,7 @@ class CountService
      * @param $type
      * @return array|mixed
      */
-    public function generate($arr, $type)
+    public function generate($staff, $arr, $type)
     {
         $signs = $this->signsModel->get();
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->value($type);//获取公式.
@@ -44,7 +44,7 @@ class CountService
         $variable = $this->variableModel->get();//系统函数
         $systemArray = explode(',', $equation);
         $repeatedly = $this->operator($signs, implode($systemArray));
-        $SystemVariables = $this->parameters($variable, $repeatedly, $arr);
+        $SystemVariables = $this->parameters($variable, $repeatedly, $arr, $staff);
         $output = $this->variable($SystemVariables);
         if (preg_match('/\A-Za-z/', $output)) {
             abort(500, '公式运算出错：包含非可运算数据');
@@ -78,10 +78,9 @@ class CountService
      * @param $repeatedly
      * @return null|string|string[]
      */
-    protected function parameters($variable, $repeatedly, $arr)
+    protected function parameters($variable, $repeatedly, $arr, $staff)
     {
-        $violateAt = $arr['violateAt'];
-        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly, $violateAt) {
+        return preg_replace_callback('/{{(\w+)}}/', function ($query) use ($variable, $repeatedly, $arr, $staff) {
             preg_match_all('/{{(\w+)}}/', $repeatedly, $operation);
             foreach ($variable as $items) {
                 if ($items['key'] === $query[1]) {
@@ -111,9 +110,9 @@ class CountService
      * @param $staffSn
      * @return int
      */
-    public function countRuleNum($ruleId, $staffSn, $violateAt)
+    public function countRuleNum($parameter)
     {
-        return $this->punishModel->where(['staff_sn' => $staffSn, 'rule_id' => $ruleId, 'month' => date('Ym', strtotime($violateAt)),])->count() + 1;
+        return $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt'])),])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)

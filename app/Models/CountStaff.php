@@ -16,15 +16,10 @@ class CountStaff extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['department_id', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money', 'score', 'has_settle'];
+    protected $fillable = ['department_id','brand_name', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money', 'score', 'has_settle'];
 
     public function countHasPunish()
     {
         return $this->hasMany(CountHasPunish::class, 'count_id', 'id');
-    }
-
-    public function countDepartment()
-    {
-        return $this->hasOne(CountDepartment::class,'id','department_id');
     }
 }
