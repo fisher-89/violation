@@ -13,7 +13,7 @@ class TotalService
     protected $countStaffModel;
     protected $countHasPunishModel;
 
-    public function __construct(Punish $punish,  CountStaff $countStaff, CountHasPunish $countHasPunish)
+    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish)
     {
         $this->punishModel = $punish;
         $this->countStaffModel = $countStaff;
@@ -30,20 +30,29 @@ class TotalService
     {
         $department = $request->department_id == true ? app('api')->withRealException()->getDepartmenets($request->department_id) : null;
         $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
-        return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true ,function($query)use($id){
-            $query->whereIn('department_id',$id);
+        return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
+            $query->whereIn('department_id', $id);
         })->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
-     * 递归提取所有部门
-     * 
+     * 递归提取所有部门id
+     *
      * @param $array
      * @return array
      */
-    protected function department($array):array
+    protected function department($array, $id = []): array
     {
-
+        $id[] = isset($array['id']) ? $array['id'] : '';
+        if ($array['children'] != []) {
+            foreach ($array['children'] as $value) {
+                $id[] = isset($value['id']) ? $value['id'] : '';
+                if ($value['children'] != []) {
+                    $id = $this->department($value, $id);
+                }
+            }
+        }
+        return $id;
     }
 
     /**
