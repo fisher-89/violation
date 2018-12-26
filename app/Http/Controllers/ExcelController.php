@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
-use App\Models\CountDepartment;
 use App\Models\CountHasPunish;
 use App\Services\CountService;
 use Illuminate\Http\Request;
@@ -25,10 +24,9 @@ class ExcelController extends Controller
     protected $countStaffModel;
     protected $produceMoneyService;
     protected $countHasPunishModel;
-    protected $countDepartmentModel;
 
     public function __construct(PunishService $punishService, CountService $countService, Punish $punish, Rules $rules,
-                                CountStaff $countStaff, CountDepartment $countDepartment, CountHasPunish $countHasPunish)
+                                CountStaff $countStaff, CountHasPunish $countHasPunish)
     {
         $this->RulesModel = $rules;
         $this->punishModel = $punish;
@@ -36,7 +34,6 @@ class ExcelController extends Controller
         $this->punishService = $punishService;
         $this->produceMoneyService = $countService;
         $this->countHasPunishModel = $countHasPunish;
-        $this->countDepartmentModel = $countDepartment;
     }
 
     /**
@@ -48,7 +45,7 @@ class ExcelController extends Controller
     public function export(Request $request)
     {
         $model = $this->punishModel->with('rules');
-        return $this->excelData($request,$model);
+        return $this->excelData($request, $model);
     }
 
     /**
@@ -136,7 +133,6 @@ class ExcelController extends Controller
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
                 $object->brand_name = $oaData['brand']['name'];
-                $request->department_id = $oaData['department_id'];
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
                     $point[] = $this->pointSql($rule, $object, $oaData, $data->id);
@@ -155,10 +151,10 @@ class ExcelController extends Controller
         if (isset($point)) {
             try {
                 $arr = app('api')->withRealException()->postPoints($point);
-                if(!isset($arr[0]['source_foreign_key'])){
+                if (!isset($arr[0]['source_foreign_key'])) {
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
-            } catch (\Exception $exception){
+            } catch (\Exception $exception) {
                 DB::rollBack();
                 abort(500, '数据同步失败，错误：' . $exception->getMessage());
             }
@@ -409,16 +405,10 @@ class ExcelController extends Controller
     public function countStaffExcel(Request $request)
     {
         $model = $this->countStaffModel;
-        return $this->excelData($request,$model);
+        return $this->excelData($request, $model);
     }
 
-    public function countDepartmentExcel(Request $request)
-    {
-        $model = $this->countDepartmentModel;
-        return $this->excelData($request,$model);
-    }
-
-    protected function excelData($request,$model)
+    protected function excelData($request, $model)
     {
         $all = $request->all();
         if (array_key_exists('page', $all) || array_key_exists('pagesize', $all)) {
