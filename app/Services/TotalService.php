@@ -30,11 +30,9 @@ class TotalService
     {
         $department = $request->department_id == true ? app('api')->withRealException()->getDepartmenets($request->department_id) : null;
         $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
-        $arr = $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
+        return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
             $query->whereIn('department_id', $id);
         })->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
-        $arr['where'] = $request->all();
-        return $arr;
     }
 
     /**
