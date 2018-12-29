@@ -123,8 +123,6 @@ class RuleController extends Controller
                 $base = preg_match_all('/{!(\d+)!}/', $value);
                 if ($base == false) {
                     return $event('扣钱公式缺少基数');
-                }elseif ($base > 1){
-                    return $event('扣钱公式基数必须是唯一的');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $key => $value) {
@@ -148,8 +146,6 @@ class RuleController extends Controller
                 $subtraction = preg_match_all('/{!(\d+)!}/', $value);
                 if ($subtraction == false) {
                     return $event('扣分公式缺少基数');
-                }elseif ($subtraction > 1){
-                    return $event('扣钱公式基数必须是唯一的');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $i => $item) {
