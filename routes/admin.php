@@ -50,7 +50,6 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->delete("/{id}", Controllers\RuleController::class . "@delType");  //制度分类表删除
     });
     $admin->get('count-staff-excel', Controllers\ExcelController::class . '@countStaffExcel');
-    $admin->get('count-department-excel', Controllers\ExcelController::class . '@countDepartmentExcel');
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');
     $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');
 });
