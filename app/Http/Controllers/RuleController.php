@@ -109,15 +109,15 @@ class RuleController extends Controller
     protected function verify($request)
     {
         $id = $request->route('id');
+        $variable = $this->variableModel->get();
+        $calculation = $this->calculationModel->get();
+        $variable = $variable == null ? [] : $variable->toArray();//系统变量
+        $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
         $this->validate($request, [
             'type_id' => 'required|numeric|exists:rule_types,id',
             'name' => ['required', 'max:20', $id === null ? 'unique:rules,name' : Rule::unique('rules', 'name')->whereNotIn('id', explode(' ', $id))],
             'description' => 'max:300',
-            'money' => ['required', function ($attribute, $value, $event) {
-                $variable = $this->variableModel->get();
-                $calculation = $this->calculationModel->get();
-                $variable = $variable == null ? [] : $variable->toArray();//系统变量
-                $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
+            'money' => ['required', function ($attribute, $value, $event)use($variable ,$calculation){
                 $base = preg_match_all('/(\d+)/', $value);
                 if ($base == false) {
                     return $event('缺少基础数值');
@@ -136,11 +136,7 @@ class RuleController extends Controller
                     }
                 }
             }],
-            'score' => ['required', function ($attribute, $value, $event) {
-                $variable = $this->variableModel->get();
-                $calculation = $this->calculationModel->get();
-                $variable = $variable == null ? [] : $variable->toArray();//系统变量
-                $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
+            'score' => ['required', function ($attribute, $value, $event)use($variable ,$calculation) {
                 $subtraction = preg_match_all('/(\d+)/', $value);
                 if ($subtraction == false) {
                     return $event('缺少基础数值');
