@@ -44,7 +44,7 @@ class ExcelController extends Controller
      */
     public function export(Request $request)
     {
-        $model = $this->punishModel->with('rules');
+        $model = $this->punishModel->with('rules.ruleTypes');
         return $this->excelData($request, $model);
     }
 
