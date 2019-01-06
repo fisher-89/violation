@@ -30,7 +30,7 @@ class RuleService
 
     public function seeAbout($request)  //读取配置->SortByQueryString()
     {
-        return $this->rulesModel->filterByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->rulesModel->with('ruleTypes')->filterByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     public function readIn($request)   //写入配置

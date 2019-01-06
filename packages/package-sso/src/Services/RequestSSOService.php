@@ -57,7 +57,8 @@ class RequestSSOService
 
     protected function getPointUri(): string
     {
-        return config('sso.point_host');
+        $ip = config('sso.point_host');
+        return $ip == true ? $ip : abort(500,'服务器未配置积分制信息');
     }
 
     protected function getDingUri(): string

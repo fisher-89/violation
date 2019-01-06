@@ -31,6 +31,6 @@ class Punish extends Model
      */
     public function rules()
     {
-        return $this->belongsTo(Rules::class, 'rule_id', 'id');
+        return $this->belongsTo(Rules::class, 'rule_id', 'id')->withTrashed();
     }
 }

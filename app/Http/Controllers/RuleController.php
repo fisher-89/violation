@@ -8,6 +8,7 @@ use App\Services\CollocateService;
 use App\Services\RuleService;
 use Illuminate\Http\Request;
 use App\Models\Punish;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class RuleController extends Controller
@@ -74,9 +75,6 @@ class RuleController extends Controller
      */
     public function delete(Request $request)        //删除配置
     {//todo 权限
-        if ($this->punishModel->where('rule_id', $request->route('id'))->first() == true) {
-            abort(400, '当前制度被使用，不能删除');
-        }
         return $this->ruleService->remove($request);
     }
 
@@ -120,9 +118,9 @@ class RuleController extends Controller
                 $calculation = $this->calculationModel->get();
                 $variable = $variable == null ? [] : $variable->toArray();//系统变量
                 $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
-                $base = preg_match_all('/{!(\d+)!}/', $value);
+                $base = preg_match_all('/(\d+)/', $value);
                 if ($base == false) {
-                    return $event('扣钱公式缺少基数');
+                    return $event('缺少基础数值');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $key => $value) {
@@ -143,9 +141,9 @@ class RuleController extends Controller
                 $calculation = $this->calculationModel->get();
                 $variable = $variable == null ? [] : $variable->toArray();//系统变量
                 $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
-                $subtraction = preg_match_all('/{!(\d+)!}/', $value);
+                $subtraction = preg_match_all('/(\d+)/', $value);
                 if ($subtraction == false) {
-                    return $event('扣分公式缺少基数');
+                    return $event('缺少基础数值');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $i => $item) {
@@ -191,6 +189,9 @@ class RuleController extends Controller
 
     public function delType(Request $request)
     {
+        if(DB::table('rules')->where('type_id',$request->route('id'))->first() == true){
+            abort(400,'当前分类被使用，无法删除');
+        };
         return $this->ruleService->deleteRuleType($request);
     }
 
