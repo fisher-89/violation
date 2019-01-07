@@ -131,7 +131,7 @@ class PunishController extends Controller
                     }
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
-                'billing_at' => 'required|date|after:violate_at',//开单时间
+                'billing_at' => 'required|date|after_or_equal:violate_at',//开单时间
                 'billing_sn' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($punisher) {
                         if ($punisher == null) {
@@ -140,7 +140,7 @@ class PunishController extends Controller
                     }
                 ],//开单人编号
                 'billing_name' => 'required|max:10',
-                'violate_at' => 'required|date|after:start_date',
+                'violate_at' => 'required|date',//违纪日期
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
@@ -158,7 +158,7 @@ class PunishController extends Controller
                     }
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
-                'paid_at' => 'date|nullable|after:billing_at',
+                'paid_at' => 'date|nullable|after_or_equal:billing_at',
                 'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id, $punish) {
                     if ($id == true) {
                         if ($punish->sync_point != $value) {
