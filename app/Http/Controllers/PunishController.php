@@ -110,7 +110,7 @@ class PunishController extends Controller
         $data['violateAt'] = $request->violate_at;
         $data['ruleId'] = $request->rule_id;
         $punish = DB::table('punish')->where('id', $id)->first();
-        $quantity = isset($punish['quantity']) ? $punish['quantity'] : '';
+        $quantity = isset($punish->quantity) ? $punish->quantity : '';
         $this->validate($request,
             [
                 'rule_id' => ['required', 'numeric', 'exists:rules,id', function ($attribute, $value, $event) use ($id, $punish) {
