@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Rules;
+use App\Models\RuleTypes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\CountHasPunish;
@@ -13,13 +14,15 @@ class PunishService
 {
     protected $ruleModel;
     protected $punishModel;
+    protected $ruleTypesModel;
     protected $countStaffModel;
     protected $countHasPunishModel;
 
-    public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, Rules $rules)
+    public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, Rules $rules, RuleTypes $ruleTypes)
     {
         $this->ruleModel = $rules;
         $this->punishModel = $punish;
+        $this->ruleTypesModel = $ruleTypes;
         $this->countStaffModel = $countStaff;
         $this->countHasPunishModel = $countHasPunish;
     }
@@ -56,6 +59,7 @@ class PunishService
         $request->department_id = $OAData['department_id'];
         $this->updateCountData($request, $punish, 1);
         DB::commit();
+        $rule->ruleType = $this->ruleTypesModel->where('id',$rule['type_id'])->first();
         $punish->rules = $rule;
         return response($punish, 201);
     }
