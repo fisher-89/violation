@@ -119,7 +119,7 @@ class RequestSSOService
     {
         return $this->request('post', $this->getDingUri() . $endpoint, [
             'sender' => '0156340823848080042',
-            'cid' => '',
+            'cid' => $arr['cid'],
             'msg' => [
                 'msgtype' => 'image',
                 'image' => [
