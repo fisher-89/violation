@@ -58,7 +58,7 @@ class RequestSSOService
     protected function getPointUri(): string
     {
         $ip = config('sso.point_host');
-        return $ip == true ? $ip : abort(500,'服务器未配置积分制信息');
+        return $ip == true ? $ip : abort(500, '服务器未配置积分制信息');
     }
 
     protected function getDingUri(): string
@@ -118,14 +118,17 @@ class RequestSSOService
     public function postDingSentinel($endpoint, $arr, $header = [], $point = '')
     {
         return $this->request('post', $this->getDingUri() . $endpoint, [
-            'sender' => '0156340823848080042',
-            'cid' => $arr['cid'],
-            'msg' => [
-                'msgtype' => 'image',
-                'image' => [
-                    'media_id' => $arr['data']
+            'Content-Type ' => 'application/json',
+            'json' => [
+                'sender' => '0156340823848080042',
+                'cid' => $arr['cid'],
+                'msg' => [
+                    'msgtype' => 'image',
+                    'image' => [
+                        'media_id' => $arr['data']
+                    ]
                 ]
-            ],
+            ]
         ], $point);
     }
 

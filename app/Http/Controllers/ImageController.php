@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PushCollection;
-use App\Models\CountDepartment;
-use App\Models\Pushing;
 use App\Models\PushingConfig;
-use App\Models\PushingLog;
 use Illuminate\Http\Request;
+use App\Models\PushingLog;
 use App\Models\CountStaff;
+use App\Models\Pushing;
 use App\Models\Punish;
 
 class ImageController extends Controller
@@ -18,36 +17,22 @@ class ImageController extends Controller
     protected $countStaffModel;
     protected $pushingLogModel;
     protected $pushingConfigModel;
-    protected $countDepartmentModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, CountDepartment $countDepartment, Pushing $pushing,
-                                PushingLog $pushingLog, PushingConfig $pushingConfig)
+    public function __construct(Punish $punish, CountStaff $countStaff, Pushing $pushing, PushingLog $pushingLog, PushingConfig $pushingConfig)
     {
         $this->punishModel = $punish;
         $this->pushingModel = $pushing;
         $this->countStaffModel = $countStaff;
         $this->pushingLogModel = $pushingLog;
         $this->pushingConfigModel = $pushingConfig;
-        $this->countDepartmentModel = $countDepartment;
     }
 
     public function punishImage(Request $request)
     {
         $staffSn = $request->user()->staff_sn;
-//        $pushConfig = $this->pushingConfigModel->where(['staff_sn' => $staffSn, 'action' => 1, 'is_open' => 1])->first();
-//        if ($pushConfig == null) {
-//            abort(400, '未开启群推送信息');
-//        }
-        $push = $this->pushingModel->where('id', $request->route('id'))->first();
-        if ($push == false) {
-            abort(404, '未找到推送的群');
-        }
-        if ($push['is_lock'] == 1) {
-            abort(404, '推送权限被冻结，请联系管理员');
-        }
-        if ($push->staff_sn != $staffSn) {
-            abort(401, '暂无推送该群的权限');
-        }
+        $all = $request->all();
+        $pushType = $all['push_type'] == 2 ? false : true;
+        $data = isset($all['push_id']) ? $all['push_id'] : abort(400, '数据格式错误');
         $punish = $this->punishModel->when($request->all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
@@ -57,30 +42,55 @@ class ImageController extends Controller
             })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         }
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
-        $save_path = $this->pushImageDispose($text);//推送的图片处理
-        $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
-        $arr = [
-            'chatid' => $push['flock_sn'],
-            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储发生错误,错误：' . $pushImage['errmsg']),
-        ];
-        $dataInfo = app('api')->withRealException()->pushingDing($arr);//发送钉钉信息
-        $dataInfo['staff_sn'] = $staffSn;
-        $dataInfo['staff_name'] = $request->user()->realname;
-        $dataInfo['ding_flock_sn'] = $push->flock_sn;
-        $dataInfo['ding_flock_name'] = $push->flock_name;
-        $dataInfo['pushing_info'] = config('app.url') . '/storage/image/' . $save_path['file_name'];
-        $this->storePushingLog($dataInfo);//存储群发送记录
-//        if ($this->pushingConfigModel->where(['staff_sn' => $staffSn, 'action' => 2, 'is_open' => 1])->first() == true) {
-//            echo response('', 201);
-//            fastcgi_finish_request();    todo 待完善
+        if ($data != [] && $pushType === true) {
+            $dingSn = [];
+            foreach ($data as $k => $v) {
+                $push = $this->pushingModel->where('id', $v)->first();
+                if ($push == false) {
+                    abort(404, '未找到推送的群');
+                }
+                if ($push['is_lock'] == 1) {
+                    abort(404, '群名字：' . $push['flock_name'] . '推送权限被冻结，请联系管理员');
+                }
+                if ($push->staff_sn != $staffSn) {
+                    abort(401, '暂无推送' . $push['flock_name'] . '群的权限');
+                }
+                $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
+            }
+            $save_path = $this->pushImageDispose($text);//推送的图片处理
+            $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
+            $array = [];
+            foreach ($dingSn as $item) {
+                $dataInfo = app('api')->withRealException()->pushingDing([
+                    'chatid' => $item['flock_sn'],
+                    'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储失败,错误：' . $pushImage['errmsg']),
+                ]);
+                $array[] = [
+                    'sender_staff_sn' => $staffSn,
+                    'sender_staff_name' => $request->user()->realname,
+                    'ding_flock_sn' => $item['flock_sn'],
+                    'ding_flock_name' => $item['flock_name'],
+                    'staff_sn' => null,
+                    'pushing_type' => 1,
+                    'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
+                    'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
+                    'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                ];
+            }
+            $this->pushingLogModel->insert($array);
+        }
+        if ($pushType != 1) {
+            echo response('', 201);
+//            fastcgi_finish_request();
 //            set_time_limit(60);
-//            $this->sentinelPush($punish);
-//        }
-        return response('', 201);
+            $this->sentinelPush($punish, $request);
+        } else {
+            return response('', 201);
+        }
     }
 
 //等待hr和钉钉同步开发
-    protected function sentinelPush($arr)
+    protected function sentinelPush($arr, $request)
     {
         foreach ($arr as $key => $value) {
             foreach ($arr as $k => $val) {
@@ -88,14 +98,42 @@ class ImageController extends Controller
                     $staff[] = $val;
                 }
             }
-            $save_path = $this->pushImageDispose(isset($staff) ? $staff : $value);
+            $save_path = $this->pushImageDispose(isset($staff) ? $staff : $value);//生成图片
+            $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
+            if (isset($staffInfo['dingtalk_number'])) {
+                $dingNumber = $staffInfo['dingtalk_number'];
+            } else {
+                $array[] = [
+                    'sender_staff_sn' => $request->user()->staff_sn,
+                    'sender_staff_name' => $request->user()->realname,
+                    'ding_flock_sn' => null,
+                    'ding_flock_name' => $staffInfo['realname'],
+                    'staff_sn' => $staffInfo['staff_sn'],
+                    'pushing_type' => 2,
+                    'states' => 0,
+                    'error_message' => '未找到钉钉编号',
+                    'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                ];
+                continue;
+            }
             $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
-            $arr = [
-//                'chatid' => $push['flock_sn'],
+            $dataInfo = app('api')->withRealException()->pushDingSentinel([
+                'cid' => $dingNumber,
                 'data' => isset($media['media_id']) ? $media['media_id'] : abort(500, '图片存储发生错误,错误：' . $media['errmsg']),
+            ]);
+            $array[] = [
+                'sender_staff_sn' => $request->user()->staff_sn,
+                'sender_staff_name' => $request->user()->realname,
+                'ding_flock_sn' => $dingNumber,
+                'ding_flock_name' => $staffInfo['realname'],
+                'staff_sn' => $staffInfo['staff_sn'],
+                'pushing_type' => 2,
+                'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
+                'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
+                'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
             ];
-            app('api')->withRealException()->pushDingSentinel($arr);
         }
+        $this->pushingLogModel->insert($array);
     }
 
     /**
@@ -207,7 +245,7 @@ class ImageController extends Controller
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'], $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time']);
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time']);
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
@@ -280,14 +318,16 @@ class ImageController extends Controller
      */
     protected function storePushingLog($arr)
     {
-        $this->pushingLogModel->create([
-            'staff_sn' => $arr['staff_sn'],
-            'staff_name' => $arr['staff_name'],
+        return [
+            'staff_sn' => isset($arr['staff_sn']) ? $arr['staff_sn'] : null,
+            'staff_name' => isset($arr['staff_name']) ? $arr['staff_name'] : '定时推送',
             'ding_flock_sn' => $arr['ding_flock_sn'],
             'ding_flock_name' => $arr['ding_flock_name'],
-            'is_success' => $arr['errmsg'] == 'ok' ? 1 : 0,
+            'pushing_type' => $arr['type'],
+            'states' => $arr['errmsg'] == 'ok' ? 1 : 0,
+            'error_message' => $arr['errmsg'] == 'ok' ? null : $arr['errmsg'],
             'pushing_info' => $arr['pushing_info'],
-        ]);
+        ];
     }
 
     /**

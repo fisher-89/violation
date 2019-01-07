@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class PushingLog extends Model
 {
-    use ListScopes,SoftDeletes;
+    use ListScopes, SoftDeletes;
 
     protected $table = 'pushing_log';
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'staff_sn','staff_name','ding_flock_sn', 'ding_flock_name', 'is_success', 'pushing_info'
+        'sender_staff_sn', 'sender_staff_name', 'ding_flock_sn', 'ding_flock_name', 'staff_sn','pushing_type', 'states', 'error_message', 'pushing_info'
     ];
 }

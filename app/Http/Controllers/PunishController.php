@@ -110,6 +110,7 @@ class PunishController extends Controller
         $data['violateAt'] = $request->violate_at;
         $data['ruleId'] = $request->rule_id;
         $punish = DB::table('punish')->where('id', $id)->first();
+        $quantity = isset($punish['quantity']) ? $punish['quantity'] : '';
         $this->validate($request,
             [
                 'rule_id' => ['required', 'numeric', 'exists:rules,id', function ($attribute, $value, $event) use ($id, $punish) {
@@ -139,25 +140,25 @@ class PunishController extends Controller
                     }
                 ],//开单人编号
                 'billing_name' => 'required|max:10',
-                'violate_at' => 'required|date|after:start_date',//违纪日期
+                'violate_at' => 'required|date|after:start_date',//违纪日期   todo 不能大于开大日期
                 'money' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data, $staff) {
-                        $now = $this->produceMoneyService->generate($staff, $data, 'money');
+                    function ($attribute, $value, $event) use ($data, $staff, $quantity) {
+                        $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
                         if ($now != $value) {
                             return $event('金额被改动');
                         }
                     }
                 ],//大爱金额
                 'score' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data, $staff) {
-                        $score = $this->produceMoneyService->generate($staff, $data, 'score');
+                    function ($attribute, $value, $event) use ($data, $staff, $quantity ) {
+                        $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
                         if ($score != $value) {
                             return $event('分值被改动');
                         }
                     }
                 ],//分值
                 'has_paid' => 'required|boolean|max:1|min:0',
-                'paid_at' => 'date|nullable',
+                'paid_at' => 'date|nullable',//todo 支付时间不能大于开大时间
                 'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id, $punish) {
                     if ($id == true) {
                         if ($punish->sync_point != $value) {

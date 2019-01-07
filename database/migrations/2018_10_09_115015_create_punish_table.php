@@ -96,33 +96,36 @@ class CreatePunishTable extends Migration
             $table->char('code');
         });
 
-        Schema::create('pushing', function (Blueprint $table) {
+        Schema::create('pushing_authority', function (Blueprint $table) {
             $table->increments('id');
             $table->char('staff_sn', 6)->comment('推送员工编号');
             $table->char('staff_name', 10)->comment('推送员工姓名');
             $table->string('flock_name',20)->comment('群名称');
             $table->string('flock_sn',50)->comment('推送的钉钉群号');
+            $table->unsignedTinyInteger('is_sentry')->comment('是否开启单人推送，0关闭，1开启')->default(0);
             $table->unsignedTinyInteger('is_lock')->comment('是否锁定 1:锁定，0：未锁定')->default(0);
         });
 
         Schema::create('pushing_log', function (Blueprint $table) {
             $table->increments('id');
-            $table->char('staff_sn', 6)->comment('推送员工编号');
-            $table->char('staff_name', 10)->comment('推送员工姓名');
-            $table->string('ding_flock_sn', 50)->comment('推送的钉钉号');
+            $table->char('sender_staff_sn', 6)->comment('推送员工编号')->nullable();
+            $table->char('sender_staff_name', 10)->comment('推送员工姓名');
+            $table->string('ding_flock_sn', 50)->comment('推送的钉钉号')->nullable();
             $table->string('ding_flock_name', 20)->comment('推送的钉钉号名称');
-            $table->unsignedTinyInteger('is_success')->comment('1:成功，0:失败');
+            $table->char('staff_sn',6)->comment('被大爱员工编号')->nullable();
+            $table->unsignedTinyInteger('pushing_type')->comment('1：群，2：个人，3：定时');
+            $table->unsignedTinyInteger('states')->comment('1:成功，0:失败');
+            $table->text('error_message')->comment('错误信息')->nullable();
             $table->text('pushing_info')->comment('推送信息')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
 
-        Schema::create('pushing_config',function(Blueprint $table){
+        Schema::create('pushing_config',function(Blueprint $table){//定时推送设置
             $table->tinyIncrements('id');
-            $table->char('staff_sn',6)->comment('推送人编号')->index();
-            $table->char('staff_name',10)->comment('推送人姓名');
-            $table->tinyInteger('action')->comment('功能 1：群推送，2：单人推送，3：月结推送');
-            $table->string('action_name')->comemnt('功能名称');
+            $table->tinyInteger('action')->comment('功能 1：群推送，2：单人推送,3:群和单人同时')->default(0);
+            $table->char('flock_name',20)->comemnt('群名称');
+            $table->char('flock_sn',50)->comemnt('钉钉群号');
             $table->dateTime('action_at')->comment('月结推送时间')->nullable();
             $table->tinyInteger('is_open')->comment('1:开启，0关闭');
         });

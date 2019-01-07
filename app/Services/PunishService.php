@@ -211,6 +211,7 @@ class PunishService
             abort(400, '已付款数据不能修改');
         }
         $rule = $this->ruleModel->find($punish->rule_id);
+        $rule->ruleType = $this->ruleTypesModel->where('id',$rule['type_id'])->first();
         $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
         if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
             $punish->rules = $rule;

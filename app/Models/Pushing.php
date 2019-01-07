@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pushing extends Model
 {
-    protected $table = 'pushing';
+    protected $table = 'pushing_authority';
 
     protected $primaryKey = 'id';
 

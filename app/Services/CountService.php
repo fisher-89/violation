@@ -17,6 +17,7 @@ class CountService
     protected $punishModel;
     protected $variableModel;
     protected $signsModel;
+    protected $quantity;
 
     public function __construct(Signs $signs, Punish $punishModel, Rules $rules, Variables $variable)
     {
@@ -34,8 +35,9 @@ class CountService
      * @param $type
      * @return array|mixed
      */
-    public function generate($staff, $arr, $type)
+    public function generate($staff, $arr, $type, $quantity = '')
     {
+        $this->quantity = $quantity;
         $signs = $this->signsModel->get();
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->value($type);//获取公式.
         if ($equation == '') {
@@ -112,7 +114,7 @@ class CountService
      */
     public function countRuleNum($parameter)
     {
-        return $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt'])),])->count() + 1;
+        return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt'])),])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)
