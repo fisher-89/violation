@@ -2,29 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RuleTypes;
-use App\Models\Variables;
-use App\Services\CollocateService;
-use App\Services\RuleService;
-use Illuminate\Http\Request;
+use App\Models\Signs;
 use App\Models\Punish;
-use Illuminate\Support\Facades\DB;
+use App\Models\Variables;
+use Illuminate\Http\Request;
+use App\Services\RuleService;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Services\CollocateService;
+
 
 class RuleController extends Controller
 {
+    protected $signsModel;
+    protected $ruleService;
     protected $punishModel;
     protected $variableModel;
-    protected $ruleService;
-    protected $calculationModel;
     protected $collocateService;
 
-    public function __construct(RuleService $ruleService, CollocateService $collocateService, Punish $punish, RuleTypes $calculations, Variables $variable)
+    public function __construct(RuleService $ruleService, CollocateService $collocateService, Punish $punish, Signs $signs, Variables $variable)
     {
+        $this->signsModel = $signs;
         $this->punishModel = $punish;
         $this->variableModel = $variable;
         $this->ruleService = $ruleService;
-        $this->calculationModel = $calculations;
         $this->collocateService = $collocateService;
     }
 
@@ -110,7 +111,7 @@ class RuleController extends Controller
     {
         $id = $request->route('id');
         $variable = $this->variableModel->get();
-        $calculation = $this->calculationModel->get();
+        $calculation = $this->signsModel->get();
         $variable = $variable == null ? [] : $variable->toArray();//系统变量
         $calculation = $calculation == null ? [] : $calculation->toArray();//运算符
         $this->validate($request, [
@@ -149,9 +150,9 @@ class RuleController extends Controller
                     }
                 }
                 preg_match_all('/{<(\w+)>}/', $value, $operator);
-                foreach ($operator[1] as $it => $items) {
-                    if (in_array($items, array_column($calculation, 'id')) == false) {
-                        return $event('找到非系统运算符:' . $operator[1][$it]);
+                foreach ($operator[1] as $k => $val) {
+                    if (in_array($val, array_column($calculation, 'id')) == false) {
+                        return $event('找到非系统运算符:' . $operator[1][$k]);
                     }
                 }
             }],
