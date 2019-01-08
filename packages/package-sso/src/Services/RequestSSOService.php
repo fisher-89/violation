@@ -120,8 +120,8 @@ class RequestSSOService
         return $this->request('post', $this->getDingUri() . $endpoint, [
             'Content-Type ' => 'application/json',
             'json' => [
-                'sender' => '0156340823848080042',
-                'cid' => $arr['cid'],
+                'agent_id' => '49053312',
+                'userid_list' => $arr['userId'],
                 'msg' => [
                     'msgtype' => 'image',
                     'image' => [

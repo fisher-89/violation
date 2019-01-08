@@ -181,7 +181,7 @@ trait ResourceLibrary
      */
     public function pushDingSentinel($arr)
     {
-        return $this->postDingSentinel('/message/send_to_conversation', $arr, [], 2);
+        return $this->postDingSentinel('/topapi/message/corpconversation/asyncsend_v2', $arr, [], 2);
     }
 
     /**向钉钉存储文件
