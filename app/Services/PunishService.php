@@ -293,7 +293,7 @@ class PunishService
         try {
             DB::beginTransaction();
             foreach ($arr as $item) {
-                $punish = $this->punishModel->find($item);
+                $punish = $this->punishModel->with('rules.ruleTypes')->find($item);
                 if ($punish->has_paid == 1) {
                     continue;
                 }
@@ -331,7 +331,7 @@ class PunishService
      */
     public function detailedPagePayment($request)
     {
-        $punish = $this->punishModel->find($request->route('id'));
+        $punish = $this->punishModel->with('rules.ruleTypes')->find($request->route('id'));
         if ((bool)$punish == false) {
             abort(404, '未找到数据');
         }
