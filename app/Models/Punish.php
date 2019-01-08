@@ -21,7 +21,7 @@ class Punish extends Model
         "rule_id", "point_log_id", "staff_sn", "staff_name", "brand_id", "brand_name", "department_id",
         "department_name", "position_id", "position_name", "shop_sn", "billing_sn", "billing_name",
         "billing_at", "quantity", "money", "score", "violate_at", "has_paid", "paid_at", "sync_point",
-        "month", "creator_sn", "creator_name",
+        "month", "remark", "creator_sn", "creator_name",
     ];
 
     /**
