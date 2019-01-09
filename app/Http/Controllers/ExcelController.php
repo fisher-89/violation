@@ -191,7 +191,7 @@ class ExcelController extends Controller
             'department_id' => $oa['department_id'],
             'department_name' => $oa['department']['full_name'],
             'shop_sn' => isset($oa['shop_sn']) ? $oa['shop_sn'] : '',
-            'shop_name' => isset($oa['shop']['name']) ? $oa['shop']['name'] : '',
+            'shop_name' => isset($oa['shop']['name']) ? $oa['shop']['name'] : null,
             'point_a' => 0,
             'point_b' => $request->score,
             'changed_at' => $request->violate_at,
