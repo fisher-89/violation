@@ -27,7 +27,7 @@ class PunishController extends Controller
      */
     public function punishList(Request $request)
     {
-        // todo 权限筛选
+        $this->authority($request->user()->authorities['oa'],197);
         return $this->punishService->punishList($request);
     }
 
@@ -39,6 +39,7 @@ class PunishController extends Controller
      */
     public function getPunishFirst(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],197);
         return $this->punishService->getFirst($request);
     }
 
@@ -50,6 +51,7 @@ class PunishController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],200);
         if ((bool)$request->staff_sn == true) {
             $staff = app('api')->withRealException()->getStaff(trim($request->staff_sn));
         } else {
@@ -71,6 +73,7 @@ class PunishController extends Controller
      */
     public function editPunish(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],204);
         if ((bool)$request->staff_sn == true) {
             $staff = app('api')->withRealException()->getStaff($request->staff_sn);
         } else {
@@ -92,7 +95,8 @@ class PunishController extends Controller
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
     public function delete(Request $request)
-    {//todo 操作权限
+    {
+        $this->authority($request->user()->authorities['oa'],202);
         return $this->punishService->softRemove($request);
     }
 
@@ -190,7 +194,8 @@ class PunishController extends Controller
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
     public function listPaymentMoney(Request $request)
-    {// todo 操作权限
+    {
+        $this->authority($request->user()->authorities['oa'],203);
         return $this->punishService->listPaymentUpdate($request->all());
     }
 
@@ -201,7 +206,15 @@ class PunishController extends Controller
      * @return array
      */
     public function detailedPagePayment(Request $request)
-    {// todo 操作权限
+    {
+        $this->authority($request->user()->authorities['oa'],203);
         return $this->punishService->detailedPagePayment($request);
+    }
+
+    protected function authority($oa,$code)
+    {
+        if (!in_array($code, $oa)) {
+            abort(401, '你没有权限操作');
+        }
     }
 }

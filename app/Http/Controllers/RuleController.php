@@ -36,7 +36,8 @@ class RuleController extends Controller
      * @return mixed
      */
     public function getList(Request $request)    //查询配置
-    {//todo 权限
+    {
+        $this->authority($request->user()->authorities['oa'],198);
         return $this->ruleService->seeAbout($request);
     }
 
@@ -47,7 +48,8 @@ class RuleController extends Controller
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
     public function store(Request $request)   //写入配置
-    {//todo 权限
+    {
+        $this->authority($request->user()->authorities['oa'],206);
         $this->verify($request);
         return $this->ruleService->readIn($request);
     }
@@ -59,7 +61,8 @@ class RuleController extends Controller
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
     public function edit(Request $request)     //修改配置
-    {//todo 权限
+    {
+        $this->authority($request->user()->authorities['oa'],207);
         if ($this->punishModel->where('rule_id', $request->route('id'))->first() == true) {
             abort(400, '当前制度被使用，不能修改');
         }
@@ -75,7 +78,8 @@ class RuleController extends Controller
      *
      */
     public function delete(Request $request)        //删除配置
-    {//todo 权限
+    {
+        $this->authority($request->user()->authorities['oa'],208);
         return $this->ruleService->remove($request);
     }
 
@@ -87,7 +91,7 @@ class RuleController extends Controller
      */
     public function getFirst(Request $request)    //单条记录
     {
-        //todo 权限
+        $this->authority($request->user()->authorities['oa'],198);
         return $this->ruleService->onlyRecord($request);
     }
 
@@ -169,23 +173,27 @@ class RuleController extends Controller
 
     public function getTypeList(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],209);
         return $this->ruleService->getTypes($request);
     }
 
     public function storeType(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],209);
         $this->ruleTypeVerify($request);
         return $this->ruleService->storeType($request);
     }
 
     public function editType(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],209);
         $this->ruleTypeVerify($request);
         return $this->ruleService->editType($request);
     }
 
     public function delType(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],209);
         if(DB::table('rules')->where('type_id',$request->route('id'))->first() == true){
             abort(400,'当前分类被使用，无法删除');
         };
@@ -201,5 +209,12 @@ class RuleController extends Controller
             ],[],[
             'name'=>'名字',
             ]);
+    }
+
+    protected function authority($oa,$code)
+    {
+        if (!in_array($code, $oa)) {
+            abort(401, '你没有权限操作');
+        }
     }
 }

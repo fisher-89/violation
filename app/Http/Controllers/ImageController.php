@@ -29,6 +29,15 @@ class ImageController extends Controller
 
     public function punishImage(Request $request)
     {
+        $this->validate($request,[
+            'push_type'=>'between:1,1|present',
+            'push_id'=>'array|required',
+            'push_id.*'=>'numeric|required',
+        ],[],[
+            'push_type'=>'推送类型',
+            'push_id'=>'推送群',
+            'push_id.*'=>'推送群',
+        ]);
         $staffSn = $request->user()->staff_sn;
         $all = $request->all();
         $pushType = $all['push_type'] == 2 ? false : true;
@@ -65,6 +74,7 @@ class ImageController extends Controller
                     'chatid' => $item['flock_sn'],
                     'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储失败,错误：' . $pushImage['errmsg']),
                 ]);
+                $date = date('Y-m-d H:i:s');
                 $array[] = [
                     'sender_staff_sn' => $staffSn,
                     'sender_staff_name' => $request->user()->realname,
@@ -75,6 +85,8 @@ class ImageController extends Controller
                     'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
                     'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
                     'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                    'created_at' => $date,
+                    'updated_at' => $date,
                 ];
             }
             $this->pushingLogModel->insert($array);
@@ -82,7 +94,8 @@ class ImageController extends Controller
         if ($pushType != 1) {
             echo response('', 201);
 //            fastcgi_finish_request();
-//            set_time_limit(60);
+//            set_time_limit(10);
+//            sleep(60);//延迟一分钟发送
             $this->sentinelPush($punish, $request);
         } else {
             return response('', 201);
@@ -90,16 +103,24 @@ class ImageController extends Controller
     }
 
 //等待hr和钉钉同步开发
-    protected function sentinelPush($arr, $request)
+    protected function sentinelPush($arrData, $request)
     {
+        $arr = is_array($arrData) ? $arrData : $arrData->toArray();
+        $pushData = [999999];
         foreach ($arr as $key => $value) {
+            if(in_array($value['staff_sn'],$pushData)){
+                continue;
+            }
+            $staff = [];
             foreach ($arr as $k => $val) {
                 if ($val['staff_sn'] == $value['staff_sn']) {
                     $staff[] = $val;
                 }
             }
-            $save_path = $this->pushImageDispose(isset($staff) ? $staff : $value);//生成图片
+            $pushData[] = $value['staff_sn'];
+            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value));//生成图片
             $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
+            $date = date('Y-m-d H:i:s');
             if (isset($staffInfo['dingtalk_number'])) {
                 $dingNumber = $staffInfo['dingtalk_number'];
             } else {
@@ -113,12 +134,14 @@ class ImageController extends Controller
                     'states' => 0,
                     'error_message' => '未找到钉钉编号',
                     'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                    'created_at' => $date,
+                    'updated_at' => $date,
                 ];
                 continue;
             }
             $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
             $dataInfo = app('api')->withRealException()->pushDingSentinel([
-                'cid' => $dingNumber,
+                'userId' => $dingNumber,
                 'data' => isset($media['media_id']) ? $media['media_id'] : abort(500, '图片存储发生错误,错误：' . $media['errmsg']),
             ]);
             $array[] = [
@@ -128,9 +151,11 @@ class ImageController extends Controller
                 'ding_flock_name' => $staffInfo['realname'],
                 'staff_sn' => $staffInfo['staff_sn'],
                 'pushing_type' => 2,
-                'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
-                'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
+                'states' => $dataInfo['errcode'] == 0 ? 1 : 0,
+                'error_message' => $dataInfo['errcode'] == 0 ? '请以实际接收到信息为准' : '钉钉：' . $dataInfo['errmsg'],
                 'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                'created_at' => $date,
+                'updated_at' => $date,
             ];
         }
         $this->pushingLogModel->insert($array);
@@ -307,7 +332,7 @@ class ImageController extends Controller
      */
     public function pushingLog(Request $request)
     {
-        return $this->pushingLogModel->where('staff_sn', $request->user()->staff_sn)
+        return $this->pushingLogModel->where('sender_staff_sn', $request->user()->staff_sn)
             ->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
@@ -338,12 +363,30 @@ class ImageController extends Controller
      */
     public function pushingAuthList(Request $request)
     {
-        $list = $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn, 'is_lock' => 0])->get();
+        $list = $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn])->get();
         if (isset($list['data'])) {
             $list['data'] = new PushCollection(collect($list['data']));
             return $list;
         } else {
             return new PushCollection($list);
         }
+    }
+
+    public function updatePush(Request $request)
+    {
+        $push = $this->pushingModel->find($request->route('id'));
+        if($push == false){
+            abort(404,'未找到数据');
+        }
+        if($request->user()->staff_sn != $push->staff_sn){
+            abort(500,'操作错误');
+        }
+        if($push->default_push == 1){
+            $sqlArray = ['default_push'=>null];
+        }else{
+            $sqlArray = ['default_push'=>1];
+        }
+        $push->update($sqlArray);
+        return response($push,201);
     }
 }

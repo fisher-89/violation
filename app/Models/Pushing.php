@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ListScopes;
 use Illuminate\Database\Eloquent\Model;
-
 
 class Pushing extends Model
 {
+    use ListScopes;
+
     protected $table = 'pushing_authority';
 
     protected $primaryKey = 'id';
@@ -14,6 +16,6 @@ class Pushing extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'staff_sn', 'staff_name', 'flock_name', 'flock_sn', 'is_lock'
+        'staff_sn', 'staff_name', 'flock_name', 'flock_sn', 'default_push'
     ];
 }

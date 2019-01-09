@@ -44,6 +44,7 @@ class ExcelController extends Controller
      */
     public function export(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],205);
         $model = $this->punishModel->with('rules.ruleTypes');
         return $this->excelData($request, $model);
     }
@@ -56,6 +57,7 @@ class ExcelController extends Controller
      */
     public function import(Request $request)
     {
+        $this->authority($request->user()->authorities['oa'],201);
         $this->getExcelFileError($request);
         $excelPath = $this->receive($request);
         $res = [];
@@ -419,6 +421,13 @@ class ExcelController extends Controller
             abort(404, '没有找到符号条件的数据');
         } else {
             return $response;
+        }
+    }
+
+    protected function authority($oa,$code)
+    {
+        if (!in_array($code, $oa)) {
+            abort(401, '你没有权限操作');
         }
     }
 }
