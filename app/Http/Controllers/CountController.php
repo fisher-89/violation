@@ -27,7 +27,7 @@ class CountController extends Controller
         $this->moneyVerify($request, $staff);
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         $all = $request->all();
-        $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first() : '';
+        $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first()->quantity : '';
         return $this->countService->generate($staff, $arr, 'money', (string)$quantity);
     }
 
@@ -42,7 +42,7 @@ class CountController extends Controller
         $this->moneyVerify($request, $staff);
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         $all = $request->all();
-        $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first() : '';
+        $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first()->quantity : '';
         return $this->countService->generate($staff, $arr, 'score', (string)$quantity);
     }
 
