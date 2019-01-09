@@ -28,7 +28,7 @@ class PushingTableSeeder extends Seeder
             ['staff_sn'=>119462,'staff_name'=>'唐骄','flock_sn'=>'chatd05d2549c4e7e1b6cf6690becf0ac5fe','flock_name'=>'浙江喜歌实业有限公司（全员）'],
             ['staff_sn'=>119462,'staff_name'=>'唐骄','flock_sn'=>'chat19d06b24ce5de9ae6b3531a27b12ea92','flock_name'=>'财务群'],
         ];
-        DB::table('pushing')->truncate();
-        DB::table('pushing')->insert($data);
+        DB::table('pushing_authority')->truncate();
+        DB::table('pushing_authority')->insert($data);
     }
 }

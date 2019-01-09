@@ -102,7 +102,7 @@ class CreatePunishTable extends Migration
             $table->char('staff_name', 10)->comment('推送员工姓名');
             $table->string('flock_name',20)->comment('群名称');
             $table->string('flock_sn',50)->comment('推送的钉钉群号');
-            $table->unsignedTinyInteger('default_push')->comment('默认选择');
+            $table->unsignedTinyInteger('default_push')->comment('默认选择')->nullable();
         });
 
         Schema::create('pushing_log', function (Blueprint $table) {
