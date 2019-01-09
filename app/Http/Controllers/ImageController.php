@@ -332,8 +332,8 @@ class ImageController extends Controller
      */
     public function pushingLog(Request $request)
     {
-        return $this->pushingLogModel->where('sender_staff_sn', $request->user()->staff_sn)
-            ->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        $this->authority($request->user()->authorities['oa'],213);
+        return $this->pushingLogModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
@@ -356,7 +356,7 @@ class ImageController extends Controller
     }
 
     /**
-     * 推送权限列表
+     * 当前用户推送权限列表
      *
      * @param Request $request
      * @return mixed
@@ -388,5 +388,12 @@ class ImageController extends Controller
         }
         $push->update($sqlArray);
         return response($push,201);
+    }
+
+    protected function authority($oa,$code)
+    {
+        if (!in_array($code, $oa)) {
+            abort(401, '你没有权限操作');
+        }
     }
 }
