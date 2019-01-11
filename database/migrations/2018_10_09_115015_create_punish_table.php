@@ -128,6 +128,19 @@ class CreatePunishTable extends Migration
             $table->dateTime('action_at')->comment('月结推送时间')->nullable();
             $table->tinyInteger('is_open')->comment('1:开启，0关闭');
         });
+
+        Schema::create('bill_image',function(Blueprint $table){
+            $table->increments('id');
+            $table->char('staff_sn',6)->comment('发送者的员工编号');
+            $table->char('staff_name',10)->comment('发送者的员工姓名');
+            $table->char('department_name', 100)->comment('发送者部门');
+            $table->string('file_name',20)->comment('文件名');
+            $table->string('file_path',100)->comment('文件路径');
+            $table->unsignedTinyInteger('push_number')->comment('被复制或被拖拽次数');
+            $table->unsignedTinyInteger('is_clear')->comment('图片是否被清除，1：清除');
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     /**
@@ -137,6 +150,7 @@ class CreatePunishTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('bill_image');
         Schema::dropIfExists('pushing_log');
         Schema::dropIfExists('pushing');
         Schema::dropIfExists('variables');
