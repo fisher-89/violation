@@ -196,7 +196,7 @@ class ExcelController extends Controller
             'shop_name' => isset($oa['shop']['name']) ? $oa['shop']['name'] : null,
             'point_a' => 0,
             'point_b' => $request->score,
-            'changed_at' => $request->violate_at,
+            'changed_at' => $request->billing_at,
             'source_id' => 6,
             'source_foreign_key' => $id,
             'first_approver_sn' => null,

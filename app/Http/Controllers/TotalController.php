@@ -47,6 +47,7 @@ class TotalController extends Controller
         $this->authority($request->user()->authorities['oa'],212);
         return $this->totalService->billImage($request);
     }
+
     protected function authority($oa,$code)
     {
         if (!in_array($code, $oa)) {

@@ -3,25 +3,30 @@
 namespace App\Services;
 
 use App\Models\Rules;
-use App\Models\RuleTypes;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use App\Models\CountHasPunish;
-use App\Models\CountStaff;
 use App\Models\Punish;
+use App\Models\BillImage;
+use App\Models\RuleTypes;
+use App\Models\CountStaff;
+use App\Models\CountHasPunish;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PunishService
 {
     protected $ruleModel;
     protected $punishModel;
+    protected $billImageModel;
     protected $ruleTypesModel;
     protected $countStaffModel;
     protected $countHasPunishModel;
 
-    public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, Rules $rules, RuleTypes $ruleTypes)
+    public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, Rules $rules,
+                                RuleTypes $ruleTypes, BillImage $billImage)
     {
         $this->ruleModel = $rules;
         $this->punishModel = $punish;
+        $this->billImageModel = $billImage;
         $this->ruleTypesModel = $ruleTypes;
         $this->countStaffModel = $countStaff;
         $this->countHasPunishModel = $countHasPunish;
@@ -58,10 +63,22 @@ class PunishService
         $request->brand_name = $OAData['brand']['name'];
         $request->department_id = $OAData['department_id'];
         $this->updateCountData($request, $punish, 1);
+        if (substr($OAData['billing_at'], 0, 7) != date('Y-m')) {
+            $this->eliminateUltimoBill($OAData['staff_sn']);
+        }
         DB::commit();
-        $rule->rule_types = $this->ruleTypesModel->where('id',$rule['type_id'])->first();
+        $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
         $punish->rules = $rule;
         return response($punish, 201);
+    }
+
+    protected function eliminateUltimoBill($staffSn)
+    {
+        $monthData = $this->billImageModel->where(['staff_sn' => $staffSn, 'push_number' => 0])->whereDate('created_at', date('Y-m'))->first();
+        if (Storage::delete($monthData['file_path']) == false) {
+            abort(500, '文件清除失败');
+        };
+        $monthData->update(['is_clear' => 1]);
     }
 
     /**
@@ -211,7 +228,7 @@ class PunishService
             abort(400, '已付款数据不能修改');
         }
         $rule = $this->ruleModel->find($punish->rule_id);
-        $rule->rule_types = $this->ruleTypesModel->where('id',$rule['type_id'])->first();
+        $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
         $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
         if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
             $punish->rules = $rule;
@@ -236,6 +253,9 @@ class PunishService
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
             $this->updateCountData($request, $punish, 0);
+            if (substr($staff['billing_at'], 0, 7) != date('Y-m')) {
+                $this->eliminateUltimoBill($staff['staff_sn']);
+            }
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();

@@ -43,7 +43,7 @@ class billCommand extends Command
      */
     public function handle()
     {
-        $punish = $this->punishModel->whereBetween('violate_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
+        $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
             date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid',0)->with('rules')->get();
         $arr = is_array($punish) ? $punish : $punish->toArray();
         $pushData = [999999];
