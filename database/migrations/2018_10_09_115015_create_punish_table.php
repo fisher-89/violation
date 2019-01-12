@@ -16,6 +16,8 @@ class CreatePunishTable extends Migration
         Schema::create('rule_types', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->char('name', 10)->comment('分类名称');
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('rules', function (Blueprint $table) {

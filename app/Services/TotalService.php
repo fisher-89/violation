@@ -87,6 +87,10 @@ class TotalService
         return $data;
     }
 
+    /**
+     * 临时调用加数据
+     */
+
     public function insertData()
     {
         set_time_limit(100);
