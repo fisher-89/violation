@@ -194,7 +194,7 @@ class RuleController extends Controller
     public function delType(Request $request)
     {
         $this->authority($request->user()->authorities['oa'],209);
-        if(DB::table('rules')->where('type_id',$request->route('id'))->first() == true){
+        if($this->ruleService->firstRule($request->route('id')) == true){
             abort(400,'当前分类被使用，无法删除');
         };
         return $this->ruleService->deleteRuleType($request);

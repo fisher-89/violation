@@ -67,6 +67,11 @@ class RuleService
         return response('', 204);
     }
 
+    public function firstRule($id)
+    {
+    return $this->rulesModel->where('type_id',$id)->first();
+    }
+
     public function onlyRecord($request)      //一条详细记录
     {
         $id = $request->route('id');
