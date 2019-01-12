@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
+        Commands\billCommand::class,
     ];
 
     /**
@@ -24,8 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-
-
+        $schedule->command('punish:billCommand')->monthlyOn(1,'2:30');
     }
 
     /**
@@ -48,7 +48,7 @@ class Kernel extends ConsoleKernel
     protected function getArtisan()
     {
         $artisan = parent::getArtisan();
-        $artisan->setName('PMS ( For Larvel )');
+        $artisan->setName('punish ( For Larvel )');
 
         return $artisan;
     }

@@ -29,14 +29,14 @@ class ImageController extends Controller
 
     public function punishImage(Request $request)
     {
-        $this->validate($request,[
-            'push_type'=>'between:1,1|present',
-            'push_id'=>'array|required',
-            'push_id.*'=>'numeric|required',
-        ],[],[
-            'push_type'=>'推送类型',
-            'push_id'=>'推送群',
-            'push_id.*'=>'推送群',
+        $this->validate($request, [
+            'push_type' => 'between:1,1|present',
+            'push_id' => 'array|required',
+            'push_id.*' => 'numeric|required',
+        ], [], [
+            'push_type' => '推送类型',
+            'push_id' => '推送群',
+            'push_id.*' => '推送群',
         ]);
         $staffSn = $request->user()->staff_sn;
         $all = $request->all();
@@ -66,7 +66,7 @@ class ImageController extends Controller
                 }
                 $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
             }
-            $save_path = $this->pushImageDispose($text);//推送的图片处理
+            $save_path = $this->pushImageDispose($text,'group/');//推送的图片处理
             $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
             $array = [];
             foreach ($dingSn as $item) {
@@ -108,22 +108,23 @@ class ImageController extends Controller
         $arr = is_array($arrData) ? $arrData : $arrData->toArray();
         $pushData = [999999];
         foreach ($arr as $key => $value) {
-            if(in_array($value['staff_sn'],$pushData)){
+            if (in_array($value['staff_sn'], $pushData)) {
                 continue;
             }
             $staff = [];
             foreach ($arr as $k => $val) {
+                if($val['pas_paid'] == 1){
+                    continue;//已付款的跳过
+                }
                 if ($val['staff_sn'] == $value['staff_sn']) {
                     $staff[] = $val;
                 }
             }
             $pushData[] = $value['staff_sn'];
-            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value));//生成图片
+            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value),'individual/');//生成图片
             $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
             $date = date('Y-m-d H:i:s');
-            if (isset($staffInfo['dingtalk_number'])) {
-                $dingNumber = $staffInfo['dingtalk_number'];
-            } else {
+            if (!isset($staffInfo['dingtalk_number'])) {
                 $array[] = [
                     'sender_staff_sn' => $request->user()->staff_sn,
                     'sender_staff_name' => $request->user()->realname,
@@ -141,13 +142,13 @@ class ImageController extends Controller
             }
             $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
             $dataInfo = app('api')->withRealException()->pushDingSentinel([
-                'userId' => $dingNumber,
+                'userId' => $staffInfo['dingtalk_number'],
                 'data' => isset($media['media_id']) ? $media['media_id'] : abort(500, '图片存储发生错误,错误：' . $media['errmsg']),
             ]);
             $array[] = [
                 'sender_staff_sn' => $request->user()->staff_sn,
                 'sender_staff_name' => $request->user()->realname,
-                'ding_flock_sn' => $dingNumber,
+                'ding_flock_sn' => $staffInfo['dingtalk_number'],
                 'ding_flock_name' => $staffInfo['realname'],
                 'staff_sn' => $staffInfo['staff_sn'],
                 'pushing_type' => 2,
@@ -167,19 +168,19 @@ class ImageController extends Controller
      * @param $text
      * @return mixed
      */
-    protected function pushImageDispose($text)
+    protected function pushImageDispose($text,$path = '')
     {
         $text[] = [];
         $params = [
             'row' => count($text),
-            'file_name' => date('YmdHis') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '.png',
+            'file_name' => uniqid('xg') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '.png',
             'title' => date('Y-m-d') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => '../storage/app/public/image/',//图片保存路径
+            'file_path' => '../storage/app/public/image/'.$path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -325,17 +326,21 @@ class ImageController extends Controller
     }
 
     /**
-     * 推送记录
+     * 所有推送记录
      *
      * @param Request $request
      * @return mixed
      */
     public function pushingLog(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],213);
+        $this->authority($request->user()->authorities['oa'], 213);
         return $this->pushingLogModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
+    public function myPushingLog(Request $request)
+    {
+        return $this->pushingModel->where('sender_staff_sn',$request->user()->staff_sn)->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+    }
     /**
      * 写入推送记录
      *
@@ -356,7 +361,7 @@ class ImageController extends Controller
     }
 
     /**
-     * 当前用户推送权限列表
+     * 配置用户推送列表
      *
      * @param Request $request
      * @return mixed
@@ -375,22 +380,18 @@ class ImageController extends Controller
     public function updatePush(Request $request)
     {
         $push = $this->pushingModel->find($request->route('id'));
-        if($push == false){
-            abort(404,'未找到数据');
+        if ($push == false) {
+            abort(404, '未找到数据');
         }
-        if($request->user()->staff_sn != $push->staff_sn){
-            abort(500,'操作错误');
+        if ($request->user()->staff_sn != $push->staff_sn) {
+            abort(500, '操作错误');
         }
-        if($push->default_push == 1){
-            $sqlArray = ['default_push'=>null];
-        }else{
-            $sqlArray = ['default_push'=>1];
-        }
+        $sqlArray = $push->default_push == 1 ? ['default_push' => null] : ['default_push' => 1];
         $push->update($sqlArray);
-        return response($push,201);
+        return response($push, 201);
     }
 
-    protected function authority($oa,$code)
+    protected function authority($oa, $code)
     {
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');
