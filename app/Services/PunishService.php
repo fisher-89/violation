@@ -131,7 +131,7 @@ class PunishService
             'billing_name' => $OADataPunish['realname'],
             'billing_at' => $request->billing_at,
             'violate_at' => $request->violate_at,
-            'has_paid' => $request->has_paid,
+            'has_paid' => $request->has_paid == 1 ? 1 : 0,
             'paid_at' => $paidDate,
             'sync_point' => $request->sync_point,
             'month' => date('Ym'),

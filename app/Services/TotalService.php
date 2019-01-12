@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Http\Controllers\ImageController;
+use App\Models\BillImage;
 use App\Models\CountHasPunish;
 use App\Models\CountStaff;
 use App\Models\Punish;
@@ -9,13 +11,15 @@ use Illuminate\Support\Facades\DB;
 
 class TotalService
 {
+    protected $billModel;
     protected $punishModel;
     protected $countStaffModel;
     protected $countHasPunishModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish)
+    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish,BillImage $billImage)
     {
         $this->punishModel = $punish;
+        $this->billModel = $billImage;
         $this->countStaffModel = $countStaff;
         $this->countHasPunishModel = $countHasPunish;
     }
@@ -81,5 +85,25 @@ class TotalService
             abort(500, '操作失败，错误：' . $exception->getMessage());
         }
         return $data;
+    }
+
+    public function insertData()
+    {
+        set_time_limit(100);
+        for ($sum = 110001; $sum < 110201; $sum++) {
+            $staff = app('api')->withRealException()->getStaff($sum);
+            if ($staff == false) {continue;}
+            $arr[] = [
+                'rule_id' => 1, 'point_log_id' => null, 'staff_sn' => $staff['staff_sn'],
+                'staff_name' => $staff['realname'], 'brand_id' => $staff['brand_id'], 'brand_name' => $staff['brand']['name'],
+                'department_id' => $staff['department_id'], 'department_name' => $staff['department']['full_name'],
+                'position_id' => $staff['position_id'], 'position_name' => $staff['position']['name'],
+                'shop_sn' => $staff['shop_sn'], 'billing_sn' => 110104, 'billing_name' => '刘勇01',
+                'billing_at' => '2018-12-30', 'quantity' => 4, 'money' => 20, 'score' => 20,
+                'violate_at' => '2018-12-29', 'has_paid' => 0, 'paid_at' => null, 'sync_point' => null,
+                'month' => 201812, 'remark' => null, 'creator_sn' => 119462, 'creator_name' => '唐骄'
+            ];
+        }
+        $this->punishModel->insert(isset($arr) ? $arr : abort(500,'未发现数据'));
     }
 }

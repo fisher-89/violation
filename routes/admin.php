@@ -33,11 +33,13 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->get("/export", Controllers\ExcelController::class . "@export");//Excel导出
         $admin->post("/import", Controllers\ExcelController::class . "@import");//Excel导入
         $admin->get("/example", Controllers\ExcelController::class . "@example");//导入模板
-
-        $admin->get('/pushing/auth',Controllers\ImageController::class.'@pushingAuthList');//当前用户能推送的群
-        $admin->post('/pushing/{id}',Controllers\ImageController::class.'@updatePush');//改变当前用户默认推送群
-        $admin->post('/image', Controllers\ImageController::class . '@punishImage');//钉钉推送
-        $admin->get('/pushing-log',Controllers\ImageController::class.'@pushingLog');//钉钉推送记录列表
+    });
+    $admin->group(['prefix' => 'push'], function (RouteContract $admin) {
+        $admin->get('/auth', Controllers\ImageController::class . '@pushingAuthList');//当前用户能推送的群  1
+        $admin->post('/{id}', Controllers\ImageController::class . '@updatePush');//改变当前用户默认推送群 1
+        $admin->post('/image', Controllers\ImageController::class . '@punishImage');//钉钉推送    1
+        $admin->get('/log', Controllers\ImageController::class . '@pushingLog');//钉钉推送记录列表   2
+        $admin->get('/my-log', Controllers\ImageController::class . '@myPushingLog');//我的推送记录   1
     });
     $admin->group(['prefix' => 'rule'], function (RouteContract $admin) {
         $admin->get("", Controllers\RuleController::class . "@getList");  //制度表查询
@@ -57,12 +59,13 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     $admin->get('count-staff-excel', Controllers\ExcelController::class . '@countStaffExcel');
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');
     $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');
+    $admin->post('bill_image', Controllers\TotalController::class . '@billImage');
 
-    $admin->group(['prefix' => 'pushing_auth'],function(RouteContract $admin){
-        $admin->get("",Controllers\PushAuthController::class.'@index');
-        $admin->post("",Controllers\PushAuthController::class.'@start');
-        $admin->put("/{id}",Controllers\PushAuthController::class.'@edit');
-        $admin->delete("/{id}",Controllers\PushAuthController::class.'@delete');
+    $admin->group(['prefix' => 'pushing_auth'], function (RouteContract $admin) {
+        $admin->get("", Controllers\PushAuthController::class . '@index');
+        $admin->post("", Controllers\PushAuthController::class . '@start');
+        $admin->put("/{id}", Controllers\PushAuthController::class . '@edit');
+        $admin->delete("/{id}", Controllers\PushAuthController::class . '@delete');
     });
 });
 Route::get('/punish/image', Controllers\ImageController::class . '@punishImage');

@@ -134,7 +134,7 @@ class CreatePunishTable extends Migration
             $table->char('staff_sn',6)->comment('发送者的员工编号');
             $table->char('staff_name',10)->comment('发送者的员工姓名');
             $table->char('department_name', 100)->comment('发送者部门');
-            $table->string('file_name',20)->comment('文件名');
+            $table->string('file_name',30)->comment('文件名');
             $table->string('file_path',100)->comment('文件路径');
             $table->unsignedTinyInteger('push_number')->comment('被复制或被拖拽次数');
             $table->unsignedTinyInteger('is_clear')->comment('图片是否被清除，1：清除');
