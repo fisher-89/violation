@@ -15,6 +15,6 @@ class BillImage extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        "staff_sn", "staff_name", "department_name", "file_name", "file_path", "push_number", "is_clear",
+        "staff_sn", "staff_name", "department_name", "file_name", "file_path", "is_clear",
     ];
 }

@@ -64,7 +64,6 @@ class billCommand extends Command
                 'department_name' => $value['department_name'],
                 'file_name' => $save_path['file_name'],
                 'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-                'push_number' => 0,
                 'is_clear' => 0,
                 'created_at' => $time,
                 'updated_at' => $time

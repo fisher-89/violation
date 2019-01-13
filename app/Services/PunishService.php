@@ -74,7 +74,7 @@ class PunishService
 
     protected function eliminateUltimoBill($staffSn)
     {
-        $monthData = $this->billImageModel->where(['staff_sn' => $staffSn, 'push_number' => 0])->whereDate('created_at', date('Y-m'))->first();
+        $monthData = $this->billImageModel->where('staff_sn', $staffSn)->whereDate('created_at', date('Y-m'))->first();
         if (Storage::delete($monthData['file_path']) == false) {
             abort(500, '文件清除失败');
         };
