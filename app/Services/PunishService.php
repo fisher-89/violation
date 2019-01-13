@@ -56,7 +56,7 @@ class PunishService
                 }
                 $punish->update(['point_log_id' => $point['id']]);
             } catch (\Exception $exception) {
-                DB::rollBack();dd($exception);
+                DB::rollBack();
                 abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
