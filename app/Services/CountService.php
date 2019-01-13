@@ -114,7 +114,7 @@ class CountService
      */
     public function countRuleNum($parameter)
     {
-        return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['billingAt'])),])->count() + 1;
+        return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt'])),])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)

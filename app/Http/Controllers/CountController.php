@@ -25,7 +25,7 @@ class CountController extends Controller
     {
         $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
         $this->moneyVerify($request, $staff);
-        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'billingAt' => $request->billing_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         $all = $request->all();
         $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first()->quantity : '';
         return $this->countService->generate($staff, $arr, 'money', (string)$quantity);
@@ -40,7 +40,7 @@ class CountController extends Controller
     {
         $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
         $this->moneyVerify($request, $staff);
-        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'billingAt' => $request->billing_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         $all = $request->all();
         $quantity = isset($all['id']) ? DB::table('punish')->where('id', $all['id'])->first()->quantity : '';
         return $this->countService->generate($staff, $arr, 'score', (string)$quantity);
@@ -60,11 +60,11 @@ class CountController extends Controller
                     }
                 }
             }],
-            'billing_at' => 'required|date|before:' . date('Y-m-d H:i:s'),
+            'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),
             'rule_id' => 'required|numeric|exists:rules,id',
         ], [], [
             'staff_sn' => '被大爱员工编号',
-            'billing_at' => '开单日期',
+            'violate_at' => '违纪日期',
             'rule_id' => '制度id',
         ]);
     }
