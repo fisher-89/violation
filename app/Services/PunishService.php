@@ -75,8 +75,8 @@ class PunishService
     protected function eliminateUltimoBill($staffSn)
     {
         $monthData = $this->billImageModel->where('staff_sn', $staffSn)->whereDate('created_at', date('Y-m'))->first();
-        if($monthData != false){
-            $filePath = 'image/individual'.basename($monthData['file_path']);
+        if ($monthData != false) {
+            $filePath = 'image/individual' . basename($monthData['file_path']);
             if (Storage::disk('public')->exists($filePath)) {
                 Storage::disk('public')->delete($filePath);
             }
@@ -96,20 +96,20 @@ class PunishService
     protected function regroupPointSql($rule, $request, $oa, $id)
     {
         return [
-            'title' => $rule->name,
-            'staff_sn' => $request->staff_sn,
-            'staff_name' => $request->staff_name,
-            'brand_id' => $oa['brand_id'],
-            'brand_name' => $oa['brand']['name'],
-            'department_id' => $oa['department_id'],
-            'department_name' => $oa['department']['full_name'],
-            'shop_sn' => $oa['shop_sn'],
-            'shop_name' => $oa['shop']['name'],
+            'title' => isset($rule->name) ? $rule->name : abort(500, '未找到标题'),
+            'staff_sn' => isset($request->staff_sn) ? $request->staff_sn : abort(500, '未找到员工编号'),
+            'staff_name' => isset($request->staff_name) ? $request->staff_name : abort(500, '未找到员工姓名'),
+            'brand_id' => isset($oa['brand_id']) ? $oa['brand_id'] : abort(500, '未找到品牌id'),
+            'brand_name' => isset($oa['brand']['name']) ? $oa['brand']['name'] : abort(500, '未找到品牌名称'),
+            'department_id' => isset($oa['department_id']) ? $oa['department_id'] : abort(500, '未找到部门id'),
+            'department_name' => isset($oa['department']['full_name']) ? $oa['department']['full_name'] : abort(500, '未找到部门名称'),
+            'shop_sn' => isset($oa['shop_sn']) ? $oa['shop_sn'] : null,
+            'shop_name' => isset($oa['shop']['name']) ? $oa['shop']['name'] : null,
             'point_a' => 0,
             'point_b' => $request->score,
-            'changed_at' => $request->violate_at,
+            'changed_at' => isset($request->violate_at) ? $request->violate_at : null,
             'source_id' => 6,
-            'source_foreign_key' => $id,
+            'source_foreign_key' => isset($id) ? $id : null,
             'first_approver_sn' => null,
             'first_approver_name' => '',
             'final_approver_sn' => null,
@@ -134,28 +134,28 @@ class PunishService
     protected function regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber)
     {
         return [
-            'rule_id' => $request->rule_id,
-            'staff_sn' => $OAData['staff_sn'],
-            'staff_name' => $OAData['realname'],
-            'brand_id' => $OAData['brand_id'],
-            'brand_name' => $OAData['brand']['name'],
-            'department_id' => $OAData['department_id'],
-            'department_name' => $OAData['department']['full_name'],
-            'position_id' => $OAData['position_id'],
-            'position_name' => $OAData['position']['name'],//
-            'shop_sn' => $OAData['shop_sn'],
-            'quantity' => $howNumber,
-            'money' => $request->money,
-            'score' => $request->score,
-            'billing_sn' => $OADataPunish['staff_sn'],
-            'billing_name' => $OADataPunish['realname'],
-            'billing_at' => $request->billing_at,
-            'violate_at' => $request->violate_at,
+            'rule_id' => isset($request->rule_id) ? $request->rule_id : abort(500, '未找到制度id'),
+            'staff_sn' => isset($OAData['staff_sn']) ? $OAData['staff_sn'] : abort(500, '未找到员工编号'),
+            'staff_name' => isset($OAData['realname']) ? $OAData['realname'] : abort(500, '未找到员工姓名'),
+            'brand_id' => isset($OAData['brand_id']) ? $OAData['brand_id'] : abort(500, '未找到品牌id'),
+            'brand_name' => isset($OAData['brand']['name']) ? $OAData['brand']['name'] : abort(500, '未找到品牌名称'),
+            'department_id' => isset($OAData['department_id']) ? $OAData['department_id'] : abort(500, '未找到部门id'),
+            'department_name' => isset($OAData['department']['full_name']) ? $OAData['department']['full_name'] : abort(500, '未找到部门名称'),
+            'position_id' => isset($OAData['position_id']) ? $OAData['position_id'] : abort(500, '未找到职位id'),
+            'position_name' => isset($OAData['position']['name']) ? $OAData['position']['name'] : abort(500, '未找到职位名称'),
+            'shop_sn' => isset($OAData['shop_sn']) ? $OAData['shop_sn'] : null,
+            'quantity' => isset($howNumber) ? $howNumber : abort(500, '当前次数为找到'),
+            'money' => isset($request->money) ? $request->money : abort(500, '罚款金额未找到'),
+            'score' => isset($request->score) ? $request->score : abort(500, '扣分分值未找到'),
+            'billing_sn' => isset($OADataPunish['staff_sn']) ? $OADataPunish['staff_sn'] : null,
+            'billing_name' => isset($OADataPunish['realname']) ? $OADataPunish['realname'] : null,
+            'billing_at' => isset($request->billing_at) ? $request->billing_at : abort(500, '未找到开单日期'),
+            'violate_at' => isset($request->violate_at) ? $request->violate_at : abort(500, '违纪日期'),
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
-            'paid_at' => $paidDate,
-            'sync_point' => $request->sync_point,
+            'paid_at' => isset($paidDate) ? $paidDate : null,
+            'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'month' => date('Ym'),
-            'remark' => $request->remark,
+            'remark' => isset($request->remark) ? $request->remark : null,
             'creator_sn' => Auth::user()->staff_sn,
             'creator_name' => Auth::user()->realname,
         ];
