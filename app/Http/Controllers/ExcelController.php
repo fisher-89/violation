@@ -134,6 +134,9 @@ class ExcelController extends Controller
             $this->excelDataVerify($object);
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
+                if(substr($data->billing_at, 0, 7) != date('Y-m')){
+                    $this->punishService->eliminateUltimoBill($data->staff_sn);
+                }
                 $object->brand_name = $oaData['brand']['name'];
                 $this->punishService->updateCountData($object, $data, 1);
                 if ($res[$i][10] == 1) {
