@@ -63,7 +63,7 @@ class PunishService
         $request->brand_name = $OAData['brand']['name'];
         $request->department_id = $OAData['department_id'];
         $this->updateCountData($request, $punish, 1);
-        if (substr($OAData['billing_at'], 0, 7) != date('Y-m')) {
+        if (substr($request->billing_at, 0, 7) != date('Y-m')) {
             $this->eliminateUltimoBill($OAData['staff_sn']);
         }
         DB::commit();
@@ -253,7 +253,7 @@ class PunishService
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
             $this->updateCountData($request, $punish, 0);
-            if (substr($staff['billing_at'], 0, 7) != date('Y-m')) {
+            if (substr($request->billing_at, 0, 7) != date('Y-m')) {
                 $this->eliminateUltimoBill($staff['staff_sn']);
             }
             DB::commit();
