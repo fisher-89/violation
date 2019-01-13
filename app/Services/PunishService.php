@@ -179,7 +179,7 @@ class PunishService
                 'staff_sn' => $punish->staff_sn,
                 'staff_name' => $punish->staff_name,
                 'paid_money' => $request->has_paid == 1 ? $request->money : 0,
-                'month' => $yes == 0 ? $punish->month : date('Ym'),
+                'month' => $yes == 0 ? $punish->month : substr($request->billing_at, 0, 4) . substr($request->billing_at, 6, 7),
                 'money' => $request->money,
                 'score' => $request->score,
                 'has_settle' => $request->has_paid >= 1 ? 1 : 0
