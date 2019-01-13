@@ -42,7 +42,7 @@ class PunishService
      */
     public function receiveData($request, $OAData, $OADataPunish)
     {
-        $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
+        $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
         $howNumber = $this->countData($request->staff_sn, $request->rule_id);
         $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
         DB::beginTransaction();
@@ -152,7 +152,7 @@ class PunishService
             'billing_at' => isset($request->billing_at) ? $request->billing_at : abort(500, '未找到开单日期'),
             'violate_at' => isset($request->violate_at) ? $request->violate_at : abort(500, '违纪日期'),
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
-            'paid_at' => isset($paidDate) ? $paidDate : null,
+            'paid_at' => $paidDate,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'month' => date('Ym'),
             'remark' => isset($request->remark) ? $request->remark : null,
@@ -221,7 +221,7 @@ class PunishService
      */
     public function updatePunish($request, $staff, $billing)
     {
-        $paidDate = $request->has_paid == 1 ? $request->paid_at : null;
+        $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
         $howNumber = $this->countData($request->staff_sn, $request->rule_id);
         $punish = $this->punishModel->find($request->route('id'));
         if ($punish == null) {
