@@ -108,7 +108,7 @@ class PunishService
             'shop_name' => isset($oa['shop']['name']) ? $oa['shop']['name'] : null,
             'point_a' => 0,
             'point_b' => $request->score,
-            'changed_at' => isset($request->violate_at) ? $request->violate_at : null,
+            'changed_at' => isset($request->billing_at) ? $request->billing_at : null,
             'source_id' => 6,
             'source_foreign_key' => isset($id) ? $id : null,
             'first_approver_sn' => null,
@@ -172,7 +172,6 @@ class PunishService
     public function updateCountData($request, $punish, $yes)
     {
         $staffData = $this->countStaffModel->where(['month' => $punish->month, 'staff_sn' => $request->staff_sn])->first();
-        dd($punish->month);
         if ($staffData == false) {
             $countId = $this->countStaffModel->insertGetId([
                 'department_id' => $request->department_id,
