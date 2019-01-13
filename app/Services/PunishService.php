@@ -155,7 +155,7 @@ class PunishService
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
             'paid_at' => $paidDate,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
-            'month' => date('Ym'),
+            'month' => isset($request->billing_at) ? substr($request->billing_at, 0, 4) . substr($request->billing_at, 5, 2):date('Ym'),
             'remark' => isset($request->remark) ? $request->remark : null,
             'creator_sn' => Auth::user()->staff_sn,
             'creator_name' => Auth::user()->realname,
@@ -172,6 +172,7 @@ class PunishService
     public function updateCountData($request, $punish, $yes)
     {
         $staffData = $this->countStaffModel->where(['month' => $punish->month, 'staff_sn' => $request->staff_sn])->first();
+        dd($punish->month);
         if ($staffData == false) {
             $countId = $this->countStaffModel->insertGetId([
                 'department_id' => $request->department_id,
