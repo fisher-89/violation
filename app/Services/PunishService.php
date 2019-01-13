@@ -49,16 +49,16 @@ class PunishService
         $punish = $this->punishModel->create($sql);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
-//            try {
+            try {
                 $point = $this->storePoint($this->regroupPointSql($rule, $request, $OAData, $punish->id));
-//                if (!isset($point['id'])) {
-//                    abort(500, '数据同步验证错误,请联系管理员');
-//                }
-//                $punish->update(['point_log_id' => $point['id']]);
-//            } catch (\Exception $exception) {
-//                DB::rollBack();
-//                abort(500, '添加失败，错误：' . $exception->getMessage());
-//            }
+                if (!isset($point['id'])) {
+                    abort(500, '数据同步验证错误,请联系管理员');
+                }
+                $punish->update(['point_log_id' => $point['id']]);
+            } catch (\Exception $exception) {
+                DB::rollBack();dd($exception);
+                abort(500, '添加失败，错误：' . $exception->getMessage());
+            }
         }
         $request->brand_name = $OAData['brand']['name'];
         $request->department_id = $OAData['department_id'];
