@@ -32,7 +32,7 @@ class TotalService
      */
     public function getStaff($request)
     {
-        $departmentId = $request->route('department_id');
+        $departmentId = $request->department_id;
         $department = $departmentId == true ? app('api')->withRealException()->getDepartmenets($departmentId) : null;
         $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
         return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
@@ -90,6 +90,34 @@ class TotalService
 
     public function billImage($request)//数据监测如果图片被删   重新生成
     {
+//        $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
+//            date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid',0)->with('rules')->get();
+//        $arr = is_array($punish) ? $punish : $punish->toArray();
+//        $pushData = [999999];
+//        foreach ($arr as $key => $value) {
+//            if (in_array($value['staff_sn'], $pushData)) {continue;}
+//            $staff = [];
+//            foreach ($arr as $k => $val) {
+//                if ($val['staff_sn'] == $value['staff_sn']) {
+//                    $staff[] = $val;
+//                }
+//            }
+//            $pushData[] = $value['staff_sn'];
+//            $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
+//            $time = date('Y-m-d H:i:s');
+//            $saveImage[] = [
+//                'staff_sn' => $value['staff_sn'],
+//                'staff_name' => $value['staff_name'],
+//                'department_name' => $value['department_name'],
+//                'file_name' => $save_path['file_name'],
+//                'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+//                'is_clear' => 0,
+//                'created_at' => $time,
+//                'updated_at' => $time
+//            ];
+//        }
+//        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
+//        exit;
         $clearInfo = $this->billModel->whereDate('created_at',date('Y-m'))->where('is_clear',1)->get();
         $clear = is_array($clearInfo ) ? $clearInfo : $clearInfo->toArray();
         if($clear != []) {
