@@ -75,6 +75,8 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
             $table->unsignedTinyInteger('has_settle')->comment('是否结清')->default(0);
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('count_has_punish', function (Blueprint $table) {
