@@ -58,7 +58,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     });
     $admin->get('count-staff-excel', Controllers\ExcelController::class . '@countStaffExcel');
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');
-    $admin->get('count-staff/{id}', Controllers\TotalController::class . '@getStaffTotal');
+    $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');
     $admin->post('bill-image', Controllers\TotalController::class . '@billImage');
 
     $admin->group(['prefix' => 'pushing_auth'], function (RouteContract $admin) {
