@@ -32,7 +32,8 @@ class TotalService
      */
     public function getStaff($request)
     {
-        $department = $request->department_id == true ? app('api')->withRealException()->getDepartmenets($request->department_id) : null;
+        $departmentId = $request->route('id');
+        $department = $departmentId == true ? app('api')->withRealException()->getDepartmenets($departmentId) : null;
         $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
         return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
             $query->whereIn('department_id', $id);
