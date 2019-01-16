@@ -64,7 +64,7 @@ class PunishService
         $request->department_id = $OAData['department_id'];
         $this->updateCountData($request, $punish, 1);
         if (substr($request->billing_at, 0, 7) != date('Y-m')) {
-            $this->eliminateUltimoBill($OAData['staff_sn']);
+            $this->eliminateUltimoBill($punish, 0);
         }
         DB::commit();
         $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
@@ -72,9 +72,9 @@ class PunishService
         return response($punish, 201);
     }
 
-    protected function eliminateUltimoBill($staffSn)
+    public function eliminateUltimoBill($staff, $n)//1  是修改  todo 支付也要删除图片
     {
-        $monthData = $this->billImageModel->where('staff_sn', $staffSn)->whereBetween('created_at',
+        $monthData = $this->billImageModel->where('staff_sn', $staff->staff_sn)->whereBetween('created_at',
             [date('Y-m-01 00:00:00'), date("Y-m-d 23:59:59")])->first();
         if ($monthData != false) {
             $filePath = 'image/individual' . basename($monthData['file_path']);
@@ -82,6 +82,21 @@ class PunishService
                 Storage::disk('public')->delete($filePath);
             }
             $monthData->update(['is_clear' => 1]);
+        }
+        $countData = $this->countStaffModel->where(['staff_sn' => $staff->staff_sn, 'month' => $staff->month])->first();
+        if ($countData == true) {
+            if ($n == 1) {
+
+            } else {
+                $countData->update([
+                    'paid_money' => $staff->has_paid == 1 ? $countData->money + $staff->money : $countData->money,
+                    'money=>' => $staff->money + $countData->money,
+                    'score' => $staff->score + $countData->score,
+                    'has_settle' => $staff->has_paid == 1 ? $staff->money + $countData->paid_money >= $countData->money ? 1 : 0 : 0
+                ]);
+            }
+        } else {
+
         }
     }
 
@@ -155,7 +170,7 @@ class PunishService
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
             'paid_at' => $paidDate,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
-            'month' => isset($request->billing_at) ? substr($request->billing_at, 0, 4) . substr($request->billing_at, 5, 2):date('Ym'),
+            'month' => isset($request->billing_at) ? substr($request->billing_at, 0, 4) . substr($request->billing_at, 5, 2) : date('Ym'),
             'remark' => isset($request->remark) ? $request->remark : null,
             'creator_sn' => Auth::user()->staff_sn,
             'creator_name' => Auth::user()->realname,
@@ -258,7 +273,7 @@ class PunishService
             $request->department_id = $staff['department_id'];
             $this->updateCountData($request, $punish, 0);
             if (substr($request->billing_at, 0, 7) != date('Y-m')) {
-                $this->eliminateUltimoBill($staff['staff_sn']);
+                $this->eliminateUltimoBill($punish, 1);
             }
             DB::commit();
         } catch (\Exception $exception) {

@@ -27,7 +27,7 @@ class PunishController extends Controller
      */
     public function punishList(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],197);
+        $this->authority($request->user()->authorities['oa'], 197);
         return $this->punishService->punishList($request);
     }
 
@@ -39,7 +39,7 @@ class PunishController extends Controller
      */
     public function getPunishFirst(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],197);
+        $this->authority($request->user()->authorities['oa'], 197);
         return $this->punishService->getFirst($request);
     }
 
@@ -51,7 +51,7 @@ class PunishController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],200);
+        $this->authority($request->user()->authorities['oa'], 200);
         if ((bool)$request->staff_sn == true) {
             $staff = app('api')->withRealException()->getStaff(trim($request->staff_sn));
         } else {
@@ -73,7 +73,7 @@ class PunishController extends Controller
      */
     public function editPunish(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],204);
+        $this->authority($request->user()->authorities['oa'], 204);
         if ((bool)$request->staff_sn == true) {
             $staff = app('api')->withRealException()->getStaff($request->staff_sn);
         } else {
@@ -96,7 +96,7 @@ class PunishController extends Controller
      */
     public function delete(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],202);
+        $this->authority($request->user()->authorities['oa'], 202);
         return $this->punishService->softRemove($request);
     }
 
@@ -135,7 +135,13 @@ class PunishController extends Controller
                     }
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
-                'billing_at' => 'required|date|after_or_equal:violate_at',//开单时间
+                'billing_at' => ['required', 'date', 'after_or_equal:violate_at', function ($attribute, $value, $event) use ($id, $punish) {
+                    if ($id == true) {
+                        if (substr($value, 0, 7) != substr($punish->billing_at, 0, 7)) {
+                            return $event('开单时间不能跨月修改');
+                        }
+                    }
+                }],//开单时间
                 'billing_sn' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($punisher) {
                         if ($punisher == null) {
@@ -144,7 +150,13 @@ class PunishController extends Controller
                     }
                 ],//开单人编号
                 'billing_name' => 'required|max:10',
-                'violate_at' => 'required|date',//违纪日期
+                'violate_at' => ['required', 'date', function ($attribute, $value, $event) use ($id, $punish) {
+                    if ($id == true) {
+                        if (substr($value, 0, 7) != substr($punish->violate_at, 0, 7)) {
+                            return $event('违纪时间不能跨月修改');
+                        }
+                    }
+                }],//违纪日期
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
@@ -154,7 +166,7 @@ class PunishController extends Controller
                     }
                 ],//大爱金额
                 'score' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data, $staff, $quantity ) {
+                    function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
                         if ($score != $value) {
                             return $event('分值被改动');
@@ -195,7 +207,7 @@ class PunishController extends Controller
      */
     public function listPaymentMoney(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],203);
+        $this->authority($request->user()->authorities['oa'], 203);
         return $this->punishService->listPaymentUpdate($request->all());
     }
 
@@ -207,11 +219,11 @@ class PunishController extends Controller
      */
     public function detailedPagePayment(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],203);
+        $this->authority($request->user()->authorities['oa'], 203);
         return $this->punishService->detailedPagePayment($request);
     }
 
-    protected function authority($oa,$code)
+    protected function authority($oa, $code)
     {
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');

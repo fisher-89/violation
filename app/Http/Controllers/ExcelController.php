@@ -44,7 +44,7 @@ class ExcelController extends Controller
      */
     public function export(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],205);
+        $this->authority($request->user()->authorities['oa'], 205);
         $model = $this->punishModel->with('rules.ruleTypes');
         return $this->excelData($request, $model);
     }
@@ -57,7 +57,7 @@ class ExcelController extends Controller
      */
     public function import(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],201);
+        $this->authority($request->user()->authorities['oa'], 201);
         $this->getExcelFileError($request);
         $excelPath = $this->receive($request);
         $res = [];
@@ -134,8 +134,8 @@ class ExcelController extends Controller
             $this->excelDataVerify($object);
             if ($this->error == []) {
                 $data = $this->punishService->excelSave($sql);
-                if(substr($data->billing_at, 0, 7) != date('Y-m')){
-                    $this->punishService->eliminateUltimoBill($data->staff_sn);
+                if (substr($data->billing_at, 0, 7) != date('Y-m')) {
+                    $this->punishService->eliminateUltimoBill($data, 0);
                 }
                 $object->brand_name = $oaData['brand']['name'];
                 $this->punishService->updateCountData($object, $data, 1);
@@ -427,7 +427,7 @@ class ExcelController extends Controller
         }
     }
 
-    protected function authority($oa,$code)
+    protected function authority($oa, $code)
     {
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');
