@@ -64,7 +64,7 @@ class PunishService
         $request->department_id = $OAData['department_id'];
         $this->updateCountData($request, $punish, 1);
         if (substr($request->billing_at, 0, 7) != date('Y-m')) {
-            $this->eliminateUltimoBill($punish, 0);
+            $this->eliminateUltimoBill($punish);
         }
         DB::commit();
         $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
@@ -72,7 +72,7 @@ class PunishService
         return response($punish, 201);
     }
 
-    public function eliminateUltimoBill($staff, $n)//1  是修改  todo 支付也要删除图片
+    public function eliminateUltimoBill($staff)
     {
         $monthData = $this->billImageModel->where('staff_sn', $staff->staff_sn)->whereBetween('created_at',
             [date('Y-m-01 00:00:00'), date("Y-m-d 23:59:59")])->first();
@@ -83,25 +83,10 @@ class PunishService
             }
             $monthData->update(['is_clear' => 1]);
         }
-        $countData = $this->countStaffModel->where(['staff_sn' => $staff->staff_sn, 'month' => $staff->month])->first();
-        if ($countData == true) {
-            if ($n == 1) {
-
-            } else {
-                $countData->update([
-                    'paid_money' => $staff->has_paid == 1 ? $countData->money + $staff->money : $countData->money,
-                    'money=>' => $staff->money + $countData->money,
-                    'score' => $staff->score + $countData->score,
-                    'has_settle' => $staff->has_paid == 1 ? $staff->money + $countData->paid_money >= $countData->money ? 1 : 0 : 0
-                ]);
-            }
-        } else {
-
-        }
     }
 
     /**
-     * 同步积分制数据
+     * 同步积分制sql数据组成
      *
      * @param $rule
      * @param $request
@@ -272,9 +257,6 @@ class PunishService
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
             $this->updateCountData($request, $punish, 0);
-            if (substr($request->billing_at, 0, 7) != date('Y-m')) {
-                $this->eliminateUltimoBill($punish, 1);
-            }
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
