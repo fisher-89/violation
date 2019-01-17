@@ -77,9 +77,8 @@ class TotalService
                     continue;
                 }
                 $countStaff->update(['paid_money' => $countStaff->money, 'has_settle' => 1]);
-                $punish['punish'] = $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
-                $countStaff['countHasPunish'] = $punish;
-                $data[] = $countStaff;
+                $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $data[] = $this->countStaffModel->where('id',$v)->with(['countHasPunish.punish'])->first();
             }
             DB::commit();
         } catch (\Exception $exception) {
