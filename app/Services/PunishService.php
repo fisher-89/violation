@@ -43,7 +43,10 @@ class PunishService
     public function receiveData($request, $OAData, $OADataPunish)
     {
         $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
-        $howNumber = $this->countData($request->staff_sn, $request->rule_id);
+        $data['staffSn'] = $request->staff_sn;
+        $data['ruleId'] = $request->rule_id;
+        $data['violateAt'] = $request->violate_at;
+        $howNumber = $this->countData($data);
         $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
         DB::beginTransaction();
         $punish = $this->punishModel->create($sql);
@@ -223,7 +226,10 @@ class PunishService
     public function updatePunish($request, $staff, $billing)
     {
         $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
-        $howNumber = $this->countData($request->staff_sn, $request->rule_id);
+        $data['staffSn'] = $request->staff_sn;
+        $data['ruleId'] = $request->rule_id;
+        $data['violateAt'] = $request->violate_at;
+        $howNumber = $this->countData($data);
         $punish = $this->punishModel->find($request->route('id'));
         if ($punish == null) {
             abort(404, '未找到数据');
@@ -418,12 +424,12 @@ class PunishService
         }
     }
 
-    public function countData($staffSn, $ruleId)
+    public function countData($data)
     {
         $where = [
-            'staff_sn' => $staffSn,
-            'rule_id' => $ruleId,
-            'month' => date('Ym'),
+            'staff_sn' => $data['staffSn'],
+            'rule_id' => $data['ruleId'],
+            'month' => date('Ym', strtotime($data['violateAt'])),
         ];
         return $this->punishModel->where($where)->count() + 1;
     }

@@ -118,7 +118,7 @@ class ExcelController extends Controller
                 'billing_sn' => isset($punish['staff_sn']) ? $punish['staff_sn'] : null,
                 'billing_name' => isset($punish['realname']) ? $punish['realname'] : null,
                 'billing_at' => $res[$i][2],
-                'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($oaData['staff_sn'], $check) : null,
+                'quantity' => isset($oaData['staff_sn']) ? $this->punishService->countData($msg) : null,
                 'money' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($oaData, $msg, 'money') : null,
                 'score' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($oaData, $msg, 'score') : null,
                 'violate_at' => $res[$i][4],
