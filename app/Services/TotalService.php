@@ -16,7 +16,7 @@ class TotalService
     protected $countStaffModel;
     protected $countHasPunishModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish,BillImage $billImage)
+    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish, BillImage $billImage)
     {
         $this->punishModel = $punish;
         $this->billModel = $billImage;
@@ -73,7 +73,7 @@ class TotalService
             DB::beginTransaction();
             foreach ($array as $k => $v) {
                 $countStaff = $this->countStaffModel->find($v);
-                if ($countStaff->paid_money == $countStaff->money || $countStaff->has_settle == 1) {
+                if ($countStaff->has_settle == 1) {
                     continue;
                 }
                 $countStaff->update(['paid_money' => $countStaff->money, 'has_settle' => 1]);
@@ -118,31 +118,32 @@ class TotalService
 //        }
 //        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
 //        exit;
-        $clearInfo = $this->billModel->whereDate('created_at',date('Y-m'))->where('is_clear',1)->get();
-        $clear = is_array($clearInfo ) ? $clearInfo : $clearInfo->toArray();
-        if($clear != []) {
+        $clearInfo = $this->billModel->whereDate('created_at', date('Y-m'))->where('is_clear', 1)->get();
+        $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
+        if ($clear != []) {
             foreach ($clear as $key => $value) {
                 $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
                     date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('staff_sn', $value['staff_sn'])
                     ->with('rules')->get();
                 $arr = is_array($punish) ? $punish : $punish->toArray();
                 $savePath = $this->pushImageDispose($this->text($arr), 'individual/');//生成图片
-                $clearInfo->where('id',$value['id'])->update([
-                    'file_name'=>$savePath['file_name'],
-                    'file_path'=>config('app.url') . '/storage/image/individual/' . $savePath['file_name'],
-                    'is_clear'=>0
+                $clearInfo->where('id', $value['id'])->update([
+                    'file_name' => $savePath['file_name'],
+                    'file_path' => config('app.url') . '/storage/image/individual/' . $savePath['file_name'],
+                    'is_clear' => 0
                 ]);
             }
         }
         return $this->billModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
+
     /**
      * 文字数据转图片
      *
      * @param $text
      * @return mixed
      */
-    protected function pushImageDispose($text,$path = '')
+    protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
         $params = [
@@ -154,7 +155,7 @@ class TotalService
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => '../storage/app/public/image/'.$path,//图片保存路径
+            'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -304,7 +305,9 @@ class TotalService
         set_time_limit(100);
         for ($sum = 110001; $sum < 110201; $sum++) {
             $staff = app('api')->withRealException()->getStaff($sum);
-            if ($staff == false) {continue;}
+            if ($staff == false) {
+                continue;
+            }
             $arr[] = [
                 'rule_id' => 1, 'point_log_id' => null, 'staff_sn' => $staff['staff_sn'],
                 'staff_name' => $staff['realname'], 'brand_id' => $staff['brand_id'], 'brand_name' => $staff['brand']['name'],
@@ -316,6 +319,6 @@ class TotalService
                 'month' => 201812, 'remark' => null, 'creator_sn' => 119462, 'creator_name' => '唐骄'
             ];
         }
-        $this->punishModel->insert(isset($arr) ? $arr : abort(500,'未发现数据'));
+        $this->punishModel->insert(isset($arr) ? $arr : abort(500, '未发现数据'));
     }
 }

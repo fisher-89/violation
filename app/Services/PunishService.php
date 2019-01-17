@@ -47,6 +47,7 @@ class PunishService
         $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
         DB::beginTransaction();
         $punish = $this->punishModel->create($sql);
+        $this->updateCountData($request, $punish, 1);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
             try {
@@ -62,7 +63,6 @@ class PunishService
         }
         $request->brand_name = $OAData['brand']['name'];
         $request->department_id = $OAData['department_id'];
-        $this->updateCountData($request, $punish, 1);
         if (substr($request->billing_at, 0, 7) != date('Y-m')) {
             $this->eliminateUltimoBill($punish);
         }
@@ -247,6 +247,7 @@ class PunishService
             $sql = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
             unset($sql['month'], $sql['creator_sn'], $sql['creator_name']);
             $punish->update($sql);
+            $this->updateCountData($request, $punish, 0);
             if ($request->sync_point == 1) {
                 $point = $this->storePoint($this->regroupPointSql($rule, $request, $staff, $punish->id));//重新添加  返回全
                 if (!isset($point['id'])) {
@@ -256,7 +257,6 @@ class PunishService
             }
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
-            $this->updateCountData($request, $punish, 0);
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
