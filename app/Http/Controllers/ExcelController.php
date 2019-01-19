@@ -123,7 +123,7 @@ class ExcelController extends Controller
                 'score' => $msg['ruleId'] != null && $msg['staffSn'] != null && $msg['violateAt'] != null ? $this->produceMoneyService->generate($oaData, $msg, 'score') : null,
                 'violate_at' => $res[$i][4],
                 'has_paid' => is_numeric($res[$i][7]) ? (int)$res[$i][7] : $res[$i][7],
-                'paid_at' => $res[$i][7] == 1 ? $res[$i][8] : null,
+                'paid_at' => $res[$i][7] == 1 ? $res[$i][8] == true ? $res[$i][8]: date('Y-m-d H:i:s') : null,
                 'month' => date('Ym'),
                 'remark' => $res[$i][9],
                 'sync_point' => is_numeric($res[$i][10]) ? (int)$res[$i][10] : $res[$i][10],
@@ -176,6 +176,11 @@ class ExcelController extends Controller
         return $info;
     }
 
+    public function staffExcel(Request $request)
+    {
+        $model = $this->punishModel;
+        return $this->excelData($request, $model);
+    }
     /**
      * Excel 重组数组
      *

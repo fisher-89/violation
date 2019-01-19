@@ -35,11 +35,11 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->get("/example", Controllers\ExcelController::class . "@example");//导入模板
     });
     $admin->group(['prefix' => 'push'], function (RouteContract $admin) {
-        $admin->get('/auth', Controllers\ImageController::class . '@pushingAuthList');//当前用户能推送的群  1
-        $admin->post('/{id}', Controllers\ImageController::class . '@updatePush');//改变当前用户默认推送群 1
-        $admin->post('/image', Controllers\ImageController::class . '@punishImage');//钉钉推送    1
-        $admin->get('/log', Controllers\ImageController::class . '@pushingLog');//钉钉推送记录列表   2
-        $admin->get('/my-log', Controllers\ImageController::class . '@myPushingLog');//我的推送记录   1
+        $admin->get('/auth', Controllers\ImageController::class . '@pushingAuthList');//当前用户能推送的群
+        $admin->post('/{id}', Controllers\ImageController::class . '@updatePush');//改变当前用户默认推送群
+        $admin->post('/image', Controllers\ImageController::class . '@punishImage');//钉钉推送
+        $admin->get('/log', Controllers\ImageController::class . '@pushingLog');//钉钉推送记录列
+        $admin->get('/my-log', Controllers\ImageController::class . '@myPushingLog');//我的推送记录
     });
     $admin->group(['prefix' => 'rule'], function (RouteContract $admin) {
         $admin->get("", Controllers\RuleController::class . "@getList");  //制度表查询
@@ -56,10 +56,11 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->put("/{id}", Controllers\RuleController::class . "@editType");  //制度分类表修改
         $admin->delete("/{id}", Controllers\RuleController::class . "@delType");  //制度分类表删除
     });
-    $admin->get('count-staff-excel', Controllers\ExcelController::class . '@countStaffExcel');
-    $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');
-    $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');
-    $admin->post('bill-image', Controllers\TotalController::class . '@billImage');
+    $admin->get('count-excel', Controllers\ExcelController::class . '@countStaffExcel');//部门导出
+    $admin->get('count-staff-excel',Controllers\ExcelController::class . '@staffExcel');//点进去内人员详细导出
+    $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');//单个人支付
+    $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');//获取统计页面数据
+    $admin->post('bill-image', Controllers\TotalController::class . '@billImage');//生成图片页面
 
     $admin->group(['prefix' => 'pushing_auth'], function (RouteContract $admin) {
         $admin->get("", Controllers\PushAuthController::class . '@index');
