@@ -77,7 +77,8 @@ class PunishService
 
     public function eliminateUltimoBill($staff)
     {
-        $monthData = $this->billImageModel->where('staff_sn', $staff->staff_sn)->whereDate('created_at',$staff->billing_at)->first();
+        $monthData = $this->billImageModel->where('staff_sn', $staff->staff_sn)->whereYear('created_at',substr($staff->billing_at,0,4))
+            ->whereMonth('created_at',substr($staff->billing_at,5,2))->first();
         if ($monthData != false) {
             $filePath = 'image/individual' . basename($monthData['file_path']);
             if (Storage::disk('public')->exists($filePath)) {
