@@ -176,8 +176,8 @@ class PunishService
         $staffData = $this->countStaffModel->where(['month' => $punish->month, 'staff_sn' => $request->staff_sn])->first();
         if ($staffData == false) {
             $countId = $this->countStaffModel->insertGetId([
-                'department_id' => $request->department_id,
-                'brand_name' => $request->brand_name,
+                'department_id' => $punish->department_id,
+                'brand_name' => $punish->brand_name,
                 'staff_sn' => $punish->staff_sn,
                 'staff_name' => $punish->staff_name,
                 'paid_money' => $request->has_paid == 1 ? $request->money : 0,
