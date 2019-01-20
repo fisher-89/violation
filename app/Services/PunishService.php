@@ -75,12 +75,12 @@ class PunishService
         return response($punish, 201);
     }
 
-    public function eliminateUltimoBill($staff)//$staff->billing_at
+    public function eliminateUltimoBill($staff)
     {
         $monthData = $this->billImageModel->where('staff_sn', $staff->staff_sn)->whereBetween('created_at',
             [date('Y-m-1'),date('Y-m-t')])->first();
         if ($monthData != false) {
-            $filePath = 'image/individual' . basename($monthData['file_path']);
+            $filePath = 'image/individual/' . basename($monthData['file_path']);
             if (Storage::disk('public')->exists($filePath)) {
                 Storage::disk('public')->delete($filePath);
             }
