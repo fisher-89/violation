@@ -118,7 +118,7 @@ class TotalService
 //        }
 //        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
 //        exit;
-        $clearInfo = $this->billModel->whereDate('created_at', date('Y-m'))->where('is_clear', 1)->get();
+        $clearInfo = $this->billModel->whereBetween('created_at', [date('Y-m-1'),date('Y-m-t')])->where('is_clear', 1)->get();
         $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
         if ($clear != []) {
             foreach ($clear as $key => $value) {
@@ -127,7 +127,7 @@ class TotalService
                     ->with('rules')->get();
                 $arr = is_array($punish) ? $punish : $punish->toArray();
                 $savePath = $this->pushImageDispose($this->text($arr), 'individual/');//生成图片
-                $clearInfo->where('id', $value['id'])->update([
+                $this->billModel->where('id', $value['id'])->update([
                     'file_name' => $savePath['file_name'],
                     'file_path' => config('app.url') . '/storage/image/individual/' . $savePath['file_name'],
                     'is_clear' => 0
