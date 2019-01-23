@@ -106,6 +106,7 @@ class CountService
     }
 
     /**
+     * 下面为预定义函数，备数据库使用
      * 当前制度/本月/次数统计
      *
      * @param $ruleId
@@ -114,7 +115,8 @@ class CountService
      */
     public function countRuleNum($parameter)
     {
-        return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'], 'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count() + 1;
+        return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'],
+                'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)
@@ -135,5 +137,10 @@ class CountService
     public function getShopValue($staffInfo)
     {
         return $staffInfo['shop_sn'] ? $staffInfo['shop_sn'] : '';
+    }
+
+    public function inArrayData($string, $array)
+    {
+        return in_array($string, $array) ? '1==1' : '1==2';
     }
 }
