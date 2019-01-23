@@ -37,7 +37,7 @@ class RuleController extends Controller
      */
     public function getList(Request $request)    //查询配置
     {
-        $this->authority($request->user()->authorities['oa'],198);
+        $this->authority($request->user()->authorities['oa'], 198);
         return $this->ruleService->seeAbout($request);
     }
 
@@ -49,7 +49,7 @@ class RuleController extends Controller
      */
     public function store(Request $request)   //写入配置
     {
-        $this->authority($request->user()->authorities['oa'],206);
+        $this->authority($request->user()->authorities['oa'], 206);
         $this->verify($request);
         return $this->ruleService->readIn($request);
     }
@@ -62,7 +62,7 @@ class RuleController extends Controller
      */
     public function edit(Request $request)     //修改配置
     {
-        $this->authority($request->user()->authorities['oa'],207);
+        $this->authority($request->user()->authorities['oa'], 207);
         if ($this->punishModel->where('rule_id', $request->route('id'))->first() == true) {
             abort(400, '当前制度被使用，不能修改');
         }
@@ -79,7 +79,7 @@ class RuleController extends Controller
      */
     public function delete(Request $request)        //删除配置
     {
-        $this->authority($request->user()->authorities['oa'],208);
+        $this->authority($request->user()->authorities['oa'], 208);
         return $this->ruleService->remove($request);
     }
 
@@ -91,7 +91,7 @@ class RuleController extends Controller
      */
     public function getFirst(Request $request)    //单条记录
     {
-        $this->authority($request->user()->authorities['oa'],198);
+        $this->authority($request->user()->authorities['oa'], 198);
         return $this->ruleService->onlyRecord($request);
     }
 
@@ -122,10 +122,12 @@ class RuleController extends Controller
             'type_id' => 'required|numeric|exists:rule_types,id',
             'name' => ['required', 'max:20', $id === null ? 'unique:rules,name' : Rule::unique('rules', 'name')->whereNotIn('id', explode(' ', $id))],
             'description' => 'max:300',
-            'money' => ['required', function ($attribute, $value, $event)use($variable ,$calculation){
-                $base = preg_match_all('/(\d+)/', $value);
-                if ($base == false) {
-                    return $event('缺少基础数值');
+            'money' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
+                if ($value != 'CustomSettings') {
+                    $base = preg_match_all('/(\d+)/', $value);
+                    if ($base == false) {
+                        return $event('缺少基础数值');
+                    }
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $key => $value) {
@@ -141,10 +143,12 @@ class RuleController extends Controller
                     }
                 }
             }],
-            'score' => ['required', function ($attribute, $value, $event)use($variable ,$calculation) {
-                $subtraction = preg_match_all('/(\d+)/', $value);
-                if ($subtraction == false) {
-                    return $event('缺少基础数值');
+            'score' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
+                if ($value != 'CustomSettings') {
+                    $subtraction = preg_match_all('/(\d+)/', $value);
+                    if ($subtraction == false) {
+                        return $event('缺少基础数值');
+                    }
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $i => $item) {
@@ -162,7 +166,7 @@ class RuleController extends Controller
             }],
             'sort' => 'numeric|max:32767',
         ], [], [
-            'type_id'=>'分类ID',
+            'type_id' => '分类ID',
             'name' => '名称',
             'description' => '描述',
             'money' => '扣钱公式',
@@ -173,29 +177,29 @@ class RuleController extends Controller
 
     public function getTypeList(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],209);
+        $this->authority($request->user()->authorities['oa'], 209);
         return $this->ruleService->getTypes($request);
     }
 
     public function storeType(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],209);
+        $this->authority($request->user()->authorities['oa'], 209);
         $this->ruleTypeVerify($request);
         return $this->ruleService->storeType($request);
     }
 
     public function editType(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],209);
+        $this->authority($request->user()->authorities['oa'], 209);
         $this->ruleTypeVerify($request);
         return $this->ruleService->editType($request);
     }
 
     public function delType(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],209);
-        if($this->ruleService->firstRule($request->route('id')) == true){
-            abort(400,'当前分类被使用，无法删除');
+        $this->authority($request->user()->authorities['oa'], 209);
+        if ($this->ruleService->firstRule($request->route('id')) == true) {
+            abort(400, '当前分类被使用，无法删除');
         };
         return $this->ruleService->deleteRuleType($request);
     }
@@ -203,15 +207,15 @@ class RuleController extends Controller
     protected function ruleTypeVerify($request)
     {
         $id = $request->route('id');
-        $this->validate($request,[
-            'name'=>[$id == false ? 'unique:rule_types,name' : Rule::unique('rule_types','name')
-                ->whereNotIn('id',explode(' ', $id)) ,'required','max:10'],
-            ],[],[
-            'name'=>'名字',
-            ]);
+        $this->validate($request, [
+            'name' => [$id == false ? 'unique:rule_types,name' : Rule::unique('rule_types', 'name')
+                ->whereNotIn('id', explode(' ', $id)), 'required', 'max:10'],
+        ], [], [
+            'name' => '名字',
+        ]);
     }
 
-    protected function authority($oa,$code)
+    protected function authority($oa, $code)
     {
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');

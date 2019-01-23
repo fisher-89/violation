@@ -160,7 +160,7 @@ class PunishController extends Controller
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
-                        if ($now != $value) {
+                        if ($now != $value && $now != 'CustomSettings') {
                             return $event('金额被改动');
                         }
                     }
@@ -168,7 +168,7 @@ class PunishController extends Controller
                 'score' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
-                        if ($score != $value) {
+                        if ($score != $value && $score != 'CustomSettings') {
                             return $event('分值被改动');
                         }
                     }

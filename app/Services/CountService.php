@@ -40,8 +40,8 @@ class CountService
         $this->quantity = $quantity;
         $signs = $this->signsModel->get();
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->value($type);//获取公式.
-        if ($equation == '') {
-            return ['status' => 'defined', 'msg' => '请自定义数据'];
+        if ($equation == 'CustomSettings') {
+            return 'CustomSettings';
         }
         $variable = $this->variableModel->get();//系统函数
         $systemArray = explode(',', $equation);
