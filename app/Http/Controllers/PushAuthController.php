@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\PushAuthService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PushAuthController extends Controller
 {
@@ -50,18 +51,23 @@ class PushAuthController extends Controller
 
     protected function verifyPush($request)
     {
-        $this->validate($request,[
-            'staff_sn'=>'required|numeric|max:999999',
-            'staff_name'=>'required|max:10',
-            'flock_sn'=>'required|max:50',
-            'flock_name'=>'required|max:20',
-            'default_push'=>'max:1'
-        ],[],[
-            'staff_sn'=>'员工编号',
-            'staff_name'=>'员工姓名',
-            'flock_sn'=>'推送地址编号',
-            'flock_name'=>'推送地址名称',
-            'default_push'=>'是否默认选中'
+        $this->validate($request, [
+            'staff_sn' => 'required|numeric|max:999999',
+            'staff_name' => 'required|max:10',
+            'flock_sn' => ['required', 'max:50', function ($attribute, $value, $event) use ($request) {
+                $push = DB::table('pushing_authority')->where(['staff_sn' => $request->staff_sn, 'flock_sn' => $value])->first();
+                if ($push == true) {
+                    return $event('人员存在重复，重复名称为:' . $push['flock_name']);
+                }
+            }],//防止重复，并返回重复的群名
+            'flock_name' => 'required|max:20',
+            'default_push' => 'max:1'
+        ], [], [
+            'staff_sn' => '员工编号',
+            'staff_name' => '员工姓名',
+            'flock_sn' => '推送地址编号',
+            'flock_name' => '推送地址名称',
+            'default_push' => '是否默认选中'
         ]);
     }
 }

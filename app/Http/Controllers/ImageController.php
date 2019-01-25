@@ -32,7 +32,7 @@ class ImageController extends Controller
         $this->validate($request, [
             'push_type' => 'between:1,1|present',
             'push_id' => 'array|required',
-            'push_id.*' => 'numeric|required',
+            'push_id.*' => ['numeric', $request->push_type == 2 ? 'present' : 'required'],
         ], [], [
             'push_type' => '推送类型',
             'push_id' => '推送群',
@@ -66,7 +66,7 @@ class ImageController extends Controller
                 }
                 $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
             }
-            $save_path = $this->pushImageDispose($text,'group/');//推送的图片处理
+            $save_path = $this->pushImageDispose($text, 'group/');//推送的图片处理
             $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
             $array = [];
             foreach ($dingSn as $item) {
@@ -113,7 +113,7 @@ class ImageController extends Controller
             }
             $staff = [];
             foreach ($arr as $k => $val) {
-                if($val['pas_paid'] == 1){
+                if ($val['pas_paid'] == 1) {
                     continue;//已付款的跳过
                 }
                 if ($val['staff_sn'] == $value['staff_sn']) {
@@ -121,7 +121,7 @@ class ImageController extends Controller
                 }
             }
             $pushData[] = $value['staff_sn'];
-            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value),'individual/');//生成图片
+            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value), 'individual/');//生成图片
             $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
             $date = date('Y-m-d H:i:s');
             if (!isset($staffInfo['dingtalk_number'])) {
@@ -168,7 +168,7 @@ class ImageController extends Controller
      * @param $text
      * @return mixed
      */
-    protected function pushImageDispose($text,$path = '')
+    protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
         $params = [
@@ -180,7 +180,7 @@ class ImageController extends Controller
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => '../storage/app/public/image/'.$path,//图片保存路径
+            'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -339,8 +339,9 @@ class ImageController extends Controller
 
     public function myPushingLog(Request $request)
     {
-        return $this->pushingModel->where('sender_staff_sn',$request->user()->staff_sn)->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->pushingModel->where('sender_staff_sn', $request->user()->staff_sn)->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
+
     /**
      * 写入推送记录
      *
