@@ -130,8 +130,8 @@ return [
         'expenses.*.type_id' => '消费类型',
         'expenses.*.send_cost' => '消费金额',
         'expenses.*.description' => '消费明细描述',
-        'expenses.*.bill' => '发票',
-        'expenses.*.bill.*' => '发票',
+        'expenses.*.billCommand' => '发票',
+        'expenses.*.billCommand.*' => '发票',
         /*驳回*/
         'reject_remarks' => '驳回原因',
         /*收款人*/

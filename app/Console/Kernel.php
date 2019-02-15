@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\billCommand::class,
+        Commands\PushCommand::class
     ];
 
     /**
@@ -25,7 +26,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('punish:billCommand')->monthlyOn(1,'2:30');
+        $schedule->command('punish:billCommand')->monthlyOn(1,'2:30');//月推送
+        $schedule->command('punish:pushCommand')->dailyAt('20:00');//日推送
     }
 
     /**

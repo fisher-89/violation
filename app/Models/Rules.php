@@ -15,7 +15,7 @@ class Rules extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['type_id', 'name', 'remark', 'money', 'score'];
+    protected $fillable = ['type_id', 'name', 'remark', 'money', 'money_custom_settings', 'score', 'score_custom_settings'];
 
     public function ruleTypes()
     {

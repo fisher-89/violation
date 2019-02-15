@@ -1,156 +1,102 @@
 <?php
 
-namespace App\Services;
+namespace App\Console\Commands;
 
 use App\Models\Punish;
 use App\Models\BillImage;
-use App\Models\CountStaff;
-use App\Models\CountHasPunish;
+use App\Models\PushingLog;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
-class TotalService
+class PushCommand extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'command:pushCommand';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description';
     protected $billModel;
     protected $punishModel;
-    protected $countStaffModel;
-    protected $countHasPunishModel;
+    protected $pushingLogModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, CountHasPunish $countHasPunish, BillImage $billImage)
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct(Punish $punish, BillImage $billImage,PushingLog $pushingLog)
     {
+        parent::__construct();
         $this->punishModel = $punish;
         $this->billModel = $billImage;
-        $this->countStaffModel = $countStaff;
-        $this->countHasPunishModel = $countHasPunish;
+        $this->pushingLogModel = $pushingLog;
     }
 
     /**
-     * 获取员工统计数据
+     * Execute the console command.
      *
-     * @param $request
      * @return mixed
      */
-    public function getStaff($request)
+    public function handle()
     {
-        $departmentId = $request->department_id;
-        $department = $departmentId == true ? app('api')->withRealException()->getDepartmenets($departmentId) : null;
-        $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
-        return $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
-            $query->whereIn('department_id', $id);
-        })->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
-    }
-
-    /**
-     * 递归提取所有部门id
-     *
-     * @param $array
-     * @return array
-     */
-    protected function department($array, $id = []): array
-    {
-        $id[] = isset($array['id']) ? $array['id'] : '';
-        if ($array['children'] != []) {
-            foreach ($array['children'] as $value) {
-                $id[] = isset($value['id']) ? $value['id'] : '';
-                if ($value['children'] != []) {
-                    $id = $this->department($value, $id);
+        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 20:00:00', strtotime('-1 day')),
+            date('Y-m-d 19:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
+        $arr = is_array($punish) ? [] : $punish->toArray();
+        if ($arr != []) {
+            $flock = [];
+            foreach ($arr as $items) {
+                foreach ($items['pushing'] as $value) {
+                    $array = [];
+                    if (in_array($value['pushing_authority']['flock_sn'], $flock)) {//在数组里面找到了   883群有三条  其他都是一条，一共5个群
+                        $info[$value['pushing_authority']['flock_sn']][] = $this->text($items);
+                    } else {//这是没有找到
+                        $array[] = $this->text($items);
+                        $info[$value['pushing_authority']['flock_sn']] = $array;
+                        $flock[] = $value['pushing_authority']['flock_sn'];
+                    }
                 }
             }
-        }
-        return $id;
-    }
-
-    /**
-     * 同时改变多个人付款状态  全付
-     *
-     * @param $array
-     * @return array
-     */
-    public function updateMoneyStatus($array)
-    {
-        $data = [];
-        try {
-            DB::beginTransaction();
-            foreach ($array as $k => $v) {
-                $countStaff = $this->countStaffModel->find($v);
-                if ($countStaff->has_settle == 1) {
-                    continue;
-                }
-                $countStaff->update(['paid_money' => $countStaff->money, 'has_settle' => 1]);
-                $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update([
-                    'has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
-                $data[] = $this->countStaffModel->where('id', $v)->with(['countHasPunish.punish'])->first();
-            }
-            DB::commit();
-        } catch (\Exception $exception) {
-            DB::rollBack();
-            abort(500, '操作失败，错误：' . $exception->getMessage());
-        }
-        return $data;
-    }
-
-    public function billImage($request)//数据监测如果图片被删   重新生成
-    {
-//        $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
-//            date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid',0)->with('rules')->get();
-//        $arr = is_array($punish) ? $punish : $punish->toArray();
-//        $pushData = [999999];
-//        foreach ($arr as $key => $value) {
-//            if (in_array($value['staff_sn'], $pushData)) {continue;}
-//            $staff = [];
-//            foreach ($arr as $k => $val) {
-//                if ($val['staff_sn'] == $value['staff_sn']) {
-//                    $staff[] = $val;
-//                }
-//            }
-//            $pushData[] = $value['staff_sn'];
-//            $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
-//            $time = date('Y-m-d H:i:s');
-//            $saveImage[] = [
-//                'staff_sn' => $value['staff_sn'],
-//                'staff_name' => $value['staff_name'],
-//                'department_name' => $value['department_name'],
-//                'file_name' => $save_path['file_name'],
-//                'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-//                'is_clear' => 0,
-//                'created_at' => $time,
-//                'updated_at' => $time
-//            ];
-//        }
-//        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
-//        exit;
-        $clearInfo = $this->billModel->whereBetween('created_at', [date('Y-m-1'), date('Y-m-t')])->where('is_clear', 1)->get();
-        $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
-        if ($clear != []) {
-            foreach ($clear as $key => $value) {
-                $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
-                    date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('staff_sn', $value['staff_sn'])
-                    ->with('rules')->get();
-                $arr = is_array($punish) ? $punish : $punish->toArray();
-                $savePath = $this->pushImageDispose($this->text($arr), 'individual/');//生成图片
-                $this->billModel->where('id', $value['id'])->update([
-                    'file_name' => $savePath['file_name'],
-                    'file_path' => config('app.url') . '/storage/image/individual/' . $savePath['file_name'],
-                    'is_clear' => 0
+            foreach ($info as $key=>$val){
+                $fileData = $this->pushImageDispose($val);
+                $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $fileData['save_path']);
+                $dataInfo = app('api')->withRealException()->pushingDing([
+                    'chatid' => $key,
+                    'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储失败,错误：' . $pushImage['errmsg']),
                 ]);
+                $date = date('Y-m-d H:i:s');
+                $array[] = [
+                    'sender_staff_sn' => null,
+                    'sender_staff_name' => '定时20:00推送',
+                    'ding_flock_sn' => $key,
+                    'ding_flock_name' => DB::table('ding_group')->where('group_sn',$key)->value('group_name'),
+                    'staff_sn' => null,
+                    'pushing_type' => 3,
+                    'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
+                    'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
+                    'pushing_info' => config('app.url') . '/storage/image/' . $fileData['file_name'],
+                    'created_at' => $date,
+                    'updated_at' => $date,
+                ];
             }
+            $this->pushingLogModel->insert($array);
         }
-        return $this->billModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
-    /**
-     * 文字数据转图片
-     *
-     * @param $text
-     * @return mixed
-     */
     protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
         $params = [
             'row' => count($text),
             'file_name' => uniqid('xg') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '.png',
-            'title' => date('Y-m-d') . '大爱记录',
+            'title' => date('Y年m月d日') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
         ];
@@ -247,7 +193,7 @@ class TotalService
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time']);
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'].'   说明：当前生成为昨天20:00-今天19:59被大爱且未付款人员');
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
@@ -259,35 +205,20 @@ class TotalService
         return $data;
     }
 
-    /**
-     * 数据提取
-     *
-     * @param $array
-     * @return array
-     */
-    protected function text($array)
+    protected function text($value)
     {
-        foreach ($array as $key => $value) {
-            $ex = explode('-', $value['department_name']);
-            $arr[] = [
-                'staff_name' => $value['staff_name'],
-                'department_name' => count($ex) > 3 ? $this->takeDepartment($ex) : $value['department_name'],
-                'billing_at' => $value['billing_at'],
-                'rules' => $value['rules']['name'],
-                'violate_at' => $value['violate_at'],
-                'quantity' => '第' . $value['quantity'] . '次',
-                'money' => $value['money']/* . '/' . $value['score']*/,
-            ];
-        }
-        return $arr;
+        $ex = explode('-', $value['department_name']);
+        return [
+            'staff_name' => $value['staff_name'],
+            'department_name' => count($ex) > 3 ? $this->takeDepartment($ex) : $value['department_name'],
+            'billing_at' => $value['billing_at'],
+            'rules' => $value['rules']['name'],
+            'violate_at' => $value['violate_at'],
+            'quantity' => '第' . $value['quantity'] . '次',
+            'money' => $value['money']/* . '/' . $value['score']*/,
+        ];
     }
 
-    /**
-     * 获取部门后三级
-     *
-     * @param $arr
-     * @return string
-     */
     protected function takeDepartment($arr)
     {
         $count = count($arr) - 4;
@@ -299,27 +230,5 @@ class TotalService
             $sum++;
         }
         return implode('-', $array);
-    }
-
-    public function insertData()
-    {
-        set_time_limit(100);
-        for ($sum = 110001; $sum < 110201; $sum++) {
-            $staff = app('api')->withRealException()->getStaff($sum);
-            if ($staff == false) {
-                continue;
-            }
-            $arr[] = [
-                'rule_id' => 1, 'point_log_id' => null, 'staff_sn' => $staff['staff_sn'],
-                'staff_name' => $staff['realname'], 'brand_id' => $staff['brand_id'], 'brand_name' => $staff['brand']['name'],
-                'department_id' => $staff['department_id'], 'department_name' => $staff['department']['full_name'],
-                'position_id' => $staff['position_id'], 'position_name' => $staff['position']['name'],
-                'shop_sn' => $staff['shop_sn'], 'billing_sn' => 110104, 'billing_name' => '刘勇01',
-                'billing_at' => '2018-12-30', 'quantity' => 4, 'money' => 20, 'score' => 20,
-                'violate_at' => '2018-12-29', 'has_paid' => 0, 'paid_at' => null, 'sync_point' => null,
-                'month' => 201812, 'remark' => null, 'creator_sn' => 119462, 'creator_name' => '唐骄'
-            ];
-        }
-        $this->punishModel->insert(isset($arr) ? $arr : abort(500, '未发现数据'));
     }
 }

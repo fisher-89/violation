@@ -143,6 +143,7 @@ class RuleController extends Controller
                     }
                 }
             }],
+            'money_custom_settings'=>'boolean|required|max:1',
             'score' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
                 if ($value != 'CustomSettings') {
                     $subtraction = preg_match_all('/(\d+)/', $value);
@@ -164,6 +165,7 @@ class RuleController extends Controller
                     }
                 }
             }],
+            'score_custom_settings'=>'boolean|required|max:1',
             'sort' => 'numeric|max:32767',
         ], [], [
             'type_id' => '分类ID',

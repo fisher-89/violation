@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PushCollection;
-use App\Models\PushingConfig;
 use Illuminate\Http\Request;
 use App\Models\PushingLog;
 use App\Models\CountStaff;
@@ -16,15 +15,13 @@ class ImageController extends Controller
     protected $pushingModel;
     protected $countStaffModel;
     protected $pushingLogModel;
-    protected $pushingConfigModel;
 
-    public function __construct(Punish $punish, CountStaff $countStaff, Pushing $pushing, PushingLog $pushingLog, PushingConfig $pushingConfig)
+    public function __construct(Punish $punish, CountStaff $countStaff, Pushing $pushing, PushingLog $pushingLog)
     {
         $this->punishModel = $punish;
         $this->pushingModel = $pushing;
         $this->countStaffModel = $countStaff;
         $this->pushingLogModel = $pushingLog;
-        $this->pushingConfigModel = $pushingConfig;
     }
 
     public function punishImage(Request $request)
@@ -45,11 +42,11 @@ class ImageController extends Controller
         $punish = $this->punishModel->when($request->all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
-        if (count($punish) == 0) {
-            $punish = $this->punishModel->when($request->all() == false, function ($query) {
-                $query->whereDate('created_at', date('Y-m-d', strtotime("-1 day")));
-            })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
-        }
+//        if (count($punish) == 0) {
+//            $punish = $this->punishModel->when($request->all() == false, function ($query) {
+//                $query->whereDate('created_at', date('Y-m-d', strtotime("-1 day")));
+//            })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
+//        }
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
         if ($data != [] && $pushType === true) {
             $dingSn = [];
@@ -93,10 +90,7 @@ class ImageController extends Controller
         }
         if ($pushType != 1) {
             echo response('', 201);
-//            fastcgi_finish_request();
-//            set_time_limit(10);
-//            sleep(60);//延迟一分钟发送
-            $this->sentinelPush($punish, $request);
+            $this->sentinelPush($punish, $request);// todo 先返回再执行
         } else {
             return response('', 201);
         }

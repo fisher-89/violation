@@ -16,5 +16,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PushingTableSeeder::class);
         $this->call(SignsTableSeeder::class);
         $this->call(VariablesTableSeeder::class);
+        $this->call(DingGroupSeeder::class);
     }
 }

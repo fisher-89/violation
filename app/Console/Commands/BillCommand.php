@@ -5,8 +5,9 @@ namespace App\Console\Commands;
 use App\Models\Punish;
 use App\Models\BillImage;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
-class billCommand extends Command
+class BillCommand extends Command
 {
     /**
      * The name and signature of the console command.
@@ -39,37 +40,42 @@ class billCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return mixed
+     * @return mixed  1号生产图片（清除7天以前的图片），1号推送图片，每天推送图片
      */
     public function handle()
     {
+        $this->imageClear();// todo 测试可用性
         $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
-            date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid',0)->with('rules')->get();
-        $arr = is_array($punish) ? $punish : $punish->toArray();
+            date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid', 0)->with('rules')->get();
+        $arr = is_array($punish) ? [] : $punish->toArray();
         $pushData = [999999];
-        foreach ($arr as $key => $value) {
-            if (in_array($value['staff_sn'], $pushData)) {continue;}
-            $staff = [];
-            foreach ($arr as $k => $val) {
-                if ($val['staff_sn'] == $value['staff_sn']) {
-                    $staff[] = $val;
+        if($arr != []){
+            foreach ($arr as $key => $value) {
+                if (in_array($value['staff_sn'], $pushData)) {
+                    continue;
                 }
+                $staff = [];
+                foreach ($arr as $k => $val) {
+                    if ($val['staff_sn'] == $value['staff_sn']) {
+                        $staff[] = $val;
+                    }
+                }
+                $pushData[] = $value['staff_sn'];
+                $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
+                $time = date('Y-m-d H:i:s');
+                $saveImage[] = [
+                    'staff_sn' => $value['staff_sn'],
+                    'staff_name' => $value['staff_name'],
+                    'department_name' => $value['department_name'],
+                    'file_name' => $save_path['file_name'],
+                    'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                    'is_clear' => 0,
+                    'created_at' => $time,
+                    'updated_at' => $time
+                ];
             }
-            $pushData[] = $value['staff_sn'];
-            $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
-            $time = date('Y-m-d H:i:s');
-            $saveImage[] = [
-                'staff_sn' => $value['staff_sn'],
-                'staff_name' => $value['staff_name'],
-                'department_name' => $value['department_name'],
-                'file_name' => $save_path['file_name'],
-                'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-                'is_clear' => 0,
-                'created_at' => $time,
-                'updated_at' => $time
-            ];
+            $this->billModel->insert($saveImage);
         }
-        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
     }
 
     protected function pushImageDispose($text, $path = '')
@@ -175,7 +181,7 @@ class billCommand extends Command
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'].'   说明：当前生成为上月被大爱且未付款人员');
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'] . '   说明：当前生成为上月被大爱且未付款人员');
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
@@ -227,5 +233,31 @@ class billCommand extends Command
             $sum++;
         }
         return implode('-', $array);
+    }
+
+    protected function imageClear()
+    {
+        $billArr = $this->billModel->where('is_clear', '0')->whereBetween('created_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
+            date("Y-m-d 23:59:59", strtotime('-7 days'))])->get();
+        $folder = '../storage/app/public/image/individual/';
+        foreach ($billArr as $value) {
+            $ext = array('php', 'htm', 'html'); //带有这些扩展名的文件不会被删除
+            $o = opendir($folder);
+            while ($file = readdir($o)) {
+                if ($file != '.' && $file != '..' && !in_array(substr($file, strrpos($file, '.') + 1), $ext)) {
+                    $fullPath = $folder . '/' . $value->file_name;
+                    if (is_dir($fullPath)) {
+                        trash($fullPath);
+                        @rmdir($fullPath);
+                    } else {
+                        if (time() - filemtime($fullPath) > 7) {
+                            unlink($fullPath);
+                        }
+                    }
+                }
+            }
+            closedir($o);
+            $this->billModel->where('id', $value->id)->update(['is_clear', '1']);
+        }
     }
 }

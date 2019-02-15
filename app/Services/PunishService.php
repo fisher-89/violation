@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PunishHasAuth;
 use App\Models\Rules;
 use App\Models\Punish;
 use App\Models\BillImage;
@@ -19,16 +20,18 @@ class PunishService
     protected $billImageModel;
     protected $ruleTypesModel;
     protected $countStaffModel;
+    protected $punishHasAuthModel;
     protected $countHasPunishModel;
 
     public function __construct(Punish $punish, CountHasPunish $countHasPunish, CountStaff $countStaff, Rules $rules,
-                                RuleTypes $ruleTypes, BillImage $billImage)
+                                RuleTypes $ruleTypes, BillImage $billImage, PunishHasAuth $punishHasAuth)
     {
         $this->ruleModel = $rules;
         $this->punishModel = $punish;
         $this->billImageModel = $billImage;
         $this->ruleTypesModel = $ruleTypes;
         $this->countStaffModel = $countStaff;
+        $this->punishHasAuthModel = $punishHasAuth;
         $this->countHasPunishModel = $countHasPunish;
     }
 
@@ -50,6 +53,14 @@ class PunishService
         $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
         DB::beginTransaction();
         $punish = $this->punishModel->create($sql);
+        $hasArray = [];
+        foreach ($request->pushing as $hasItem) {
+            $hasArray[] = [
+                'punish_id' => $punish->id,
+                'auth_id' => $hasItem
+            ];
+        }
+        $this->punishHasAuthModel->insert($hasArray);
         $this->updateCountData($request, $punish, 1);
         $rule = $this->ruleModel->find($request->rule_id);
         if ($request->sync_point == 1) {
@@ -72,6 +83,7 @@ class PunishService
         DB::commit();
         $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
         $punish->rules = $rule;
+        $punish->pushing = $request->pushing;
         return response($punish, 201);
     }
 
@@ -156,6 +168,7 @@ class PunishService
             'billing_at' => isset($request->billing_at) ? $request->billing_at : abort(500, '未找到开单日期'),
             'violate_at' => isset($request->violate_at) ? $request->violate_at : abort(500, '违纪日期'),
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
+            'action_staff_sn' => $request->has_paid == 1 ? $request->user()->staff_sn : null,
             'paid_at' => $paidDate,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'month' => isset($request->billing_at) ? substr($request->billing_at, 0, 4) . substr($request->billing_at, 5, 2) : date('Ym'),
@@ -259,7 +272,7 @@ class PunishService
                 if (!isset($point['id'])) {
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
-                $punish->update(['point_log_id' => $point['id']]);
+                $punish->update(['point_log_id' => $point['id']]);//todo 编辑未过推送时间的群
             }
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
@@ -328,6 +341,7 @@ class PunishService
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
+                    'action_staff_sn' => Auth::user()->staff_sn,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $data[] = $punish;
@@ -343,12 +357,14 @@ class PunishService
     /**
      * @param $request
      * @return array
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     * @throws \Illuminate\Auth\Access\AuthorizationException  按群进行赛选
      */
     public function punishList($request)
     {
         return $this->punishModel->with('rules.ruleTypes')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
+
+
 
     /**
      * 详细页面的支付状态双向改变
@@ -369,6 +385,7 @@ class PunishService
                 $punish->update(['has_paid' => 0, 'paid_at' => NULL]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
+                    'action_staff_sn' => Auth::user()->staff_sn,
                     'has_settle' => 0
                 ]);
 

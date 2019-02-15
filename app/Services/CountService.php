@@ -37,21 +37,22 @@ class CountService
      */
     public function generate($staff, $arr, $type, $quantity = '')
     {
+        $info = [];
         $this->quantity = $quantity;
         $signs = $this->signsModel->get();
-        $equation = $this->ruleModel->where('id', $arr['ruleId'])->value($type);//获取公式.
-        if ($equation == 'CustomSettings') {
-            return 'CustomSettings';
-        }
-        $variable = $this->variableModel->get();//系统函数
-        $systemArray = explode(',', $equation);
+        $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
+        $str = $type . '_custom_settings';
+        $info['states'] = $equation->$str == '1' ? 1 : 0;
+        $variable = $this->variableModel->get();
+        $systemArray = explode(',', $equation->$type);
         $repeatedly = $this->operator($signs, implode($systemArray));
         $SystemVariables = $this->parameters($variable, $repeatedly, $arr, $staff);
         $output = $this->variable($SystemVariables);
         if (preg_match('/\A-Za-z/', $output)) {
             abort(500, '公式运算出错：包含非可运算数据');
         }
-        return eval('return ' . $output . ';');
+        $info['data'] = eval('return ' . $output . ';');
+        return $info;
     }
 
     /**

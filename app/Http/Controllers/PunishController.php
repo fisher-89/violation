@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PunishHasAuth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
 use App\Services\CountService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PunishController extends Controller
 {
     protected $punishService;
+    protected $punishHasAuthModel;
     protected $produceMoneyService;
 
-    public function __construct(PunishService $punishService, CountService $produceMoneyService)
+    public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth)
     {
         $this->punishService = $punishService;
+        $this->punishHasAuthModel = $punishHasAuth;
         $this->produceMoneyService = $produceMoneyService;
     }
 
@@ -47,21 +52,13 @@ class PunishController extends Controller
      * 2018年10月9日17:49:20 大爱添加
      *
      * @param Request $request
-     * @return array|void
+     * @return array|void  3194492428
      */
     public function store(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 200);
-        if ((bool)$request->staff_sn == true) {
-            $staff = app('api')->withRealException()->getStaff(trim($request->staff_sn));
-        } else {
-            $staff = null;
-        }
-        if ((bool)$request->billing_sn == true) {
-            $billing = app('api')->withRealException()->getStaff(trim($request->billing_sn));
-        } else {
-            $billing = null;
-        }
+        $staff = (bool)$request->staff_sn == true ? app('api')->withRealException()->getStaff(trim($request->staff_sn)) : null;
+        $billing = (bool)$request->billing_sn == true ? app('api')->withRealException()->getStaff(trim($request->billing_sn)) : null;
         $this->punishStoreVerify($request, $staff, $billing);
         return $this->punishService->receiveData($request, $staff, $billing);
     }
@@ -74,16 +71,8 @@ class PunishController extends Controller
     public function editPunish(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 204);
-        if ((bool)$request->staff_sn == true) {
-            $staff = app('api')->withRealException()->getStaff($request->staff_sn);
-        } else {
-            $staff = null;
-        }
-        if ((bool)$request->billing_sn == true) {
-            $billing = app('api')->withRealException()->getStaff($request->billing_sn);
-        } else {
-            $billing = null;
-        }
+        $staff = (bool)$request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : null;
+        $billing = (bool)$request->billing_sn == true ? app('api')->withRealException()->getStaff($request->billing_sn) : null;
         $this->punishStoreVerify($request, $staff, $billing);
         return $this->punishService->updatePunish($request, $staff, $billing);
     }
@@ -122,6 +111,18 @@ class PunishController extends Controller
                         return $event('被大爱原因不能被修改');
                     }
                 }],//制度表I
+                'pushing' => ['required', 'array', function ($attribute, $value, $event) use ($id) {
+                    if ($id == true) {
+                        $hasObj = $this->punishHasAuthModel->whereIn('punish_id', $id)->get();
+                        $hasArray = empty($hasObj) ? [] : array_column($hasObj->toArray(), 'auth_id');
+                        $boole = date('Y-m-d H:i:s') > date('Y-m-d 20:i:s') ?
+                            (array_diff_assoc($value, $hasArray) != [] ? true : false) : false;
+                        if ($boole) {
+                            return $event('不能修改已过推送时间的群组');
+                        }
+                    }
+                }],
+                'pushing.*' =>['required', Rule::exists('pushing_authority','id')->where('staff_sn',$request->user()->staff_sn),] ,
                 'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff, $id, $punish) {
                     if ($staff == null) {
                         return $event('被大爱员工编号未找到');
@@ -160,7 +161,7 @@ class PunishController extends Controller
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
-                        if ($now != $value && $now != 'CustomSettings') {
+                        if ($now['data'] != $value && $now['states'] != 1) {
                             return $event('金额被改动');
                         }
                     }
@@ -168,7 +169,7 @@ class PunishController extends Controller
                 'score' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
-                        if ($score != $value && $score != 'CustomSettings') {
+                        if ($score['data'] != $value && $score['states'] != 1) {
                             return $event('分值被改动');
                         }
                     }
@@ -186,6 +187,7 @@ class PunishController extends Controller
                 'rule_id' => '制度表id',
                 'staff_sn' => '被大爱者编号',
                 'staff_name' => '被大爱者名字',
+                'pushing' => '推送群',
                 'billing_at' => '开单时间',
                 'billing_sn' => '开单人编号',
                 'billing_name' => '开单人姓名',
