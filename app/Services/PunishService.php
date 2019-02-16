@@ -189,7 +189,7 @@ class PunishService
     {
         $staffData = $this->countStaffModel->where(['month' => $punish->month, 'staff_sn' => $request->staff_sn])->first();
         if ($staffData == false) {
-            $countId = $this->countStaffModel->insertGetId([
+            $count = $this->countStaffModel->create([
                 'department_id' => $punish->department_id,
                 'brand_name' => $punish->brand_name,
                 'staff_sn' => $punish->staff_sn,
@@ -211,7 +211,7 @@ class PunishService
         }
         if ($yes == 1) {
             $this->countHasPunishModel->insert([
-                'count_id' => isset($countId) ? $countId : $staffData->id,
+                'count_id' => isset($count) ? $count->id : $staffData->id,
                 'punish_id' => $punish->id
             ]);
         }
@@ -337,11 +337,10 @@ class PunishService
                 if ($punish->has_paid == 1) {
                     continue;
                 }
-                $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $punish->update(['has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
-                    'action_staff_sn' => Auth::user()->staff_sn,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $data[] = $punish;
@@ -365,7 +364,6 @@ class PunishService
     }
 
 
-
     /**
      * 详细页面的支付状态双向改变
      *
@@ -382,15 +380,14 @@ class PunishService
             DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
             if ($punish->has_paid == 1) {
-                $punish->update(['has_paid' => 0, 'paid_at' => NULL]);
+                $punish->update(['has_paid' => 0, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => NULL]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
-                    'action_staff_sn' => Auth::user()->staff_sn,
                     'has_settle' => 0
                 ]);
 
             } else {
-                $punish->update(['has_paid' => 1, 'paid_at' => date('Y-m-d H:i:s')]);
+                $punish->update(['has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0

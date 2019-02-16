@@ -49,7 +49,7 @@ class BillCommand extends Command
             date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid', 0)->with('rules')->get();
         $arr = is_array($punish) ? [] : $punish->toArray();
         $pushData = [999999];
-        if($arr != []){
+        if ($arr != []) {
             foreach ($arr as $key => $value) {
                 if (in_array($value['staff_sn'], $pushData)) {
                     continue;

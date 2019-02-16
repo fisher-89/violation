@@ -76,7 +76,7 @@ class CreatePunishTable extends Migration
             $table->foreign('rule_id')->references('id')->on('rules');
         });
 
-        Schema::create('punish_has_auth',function(Blueprint $table){
+        Schema::create('punish_has_auth', function (Blueprint $table) {
             $table->unsignedInteger('punish_id')->index();
             $table->unsignedInteger('auth_id')->index();
             $table->primary(['auth_id', 'punish_id'], 'auth_id_punish_id');

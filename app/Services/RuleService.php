@@ -69,7 +69,7 @@ class RuleService
 
     public function firstRule($id)
     {
-    return $this->rulesModel->where('type_id',$id)->first();
+        return $this->rulesModel->where('type_id', $id)->first();
     }
 
     public function onlyRecord($request)      //一条详细记录
@@ -97,20 +97,20 @@ class RuleService
     public function editType($request)
     {
         $types = $this->ruleTypeModel->find($request->route('id'));
-        if($types == false){
-            abort(404,'未找到数据');
+        if ($types == false) {
+            abort(404, '未找到数据');
         }
         $types->update($request->all());
-        return response($types,201);
+        return response($types, 201);
     }
 
     public function deleteRuleType($request)
     {
         $typeData = $this->ruleTypeModel->find($request->route('id'));
-        if($typeData == false){
-            abort(404,'未找到数据');
+        if ($typeData == false) {
+            abort(404, '未找到数据');
         }
         $typeData->delete($typeData);
-        return response('',204);
+        return response('', 204);
     }
 }

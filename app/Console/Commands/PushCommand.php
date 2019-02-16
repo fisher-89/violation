@@ -32,7 +32,7 @@ class PushCommand extends Command
      *
      * @return void
      */
-    public function __construct(Punish $punish, BillImage $billImage,PushingLog $pushingLog)
+    public function __construct(Punish $punish, BillImage $billImage, PushingLog $pushingLog)
     {
         parent::__construct();
         $this->punishModel = $punish;
@@ -55,39 +55,54 @@ class PushCommand extends Command
             foreach ($arr as $items) {
                 foreach ($items['pushing'] as $value) {
                     $array = [];
-                    if (in_array($value['pushing_authority']['flock_sn'], $flock)) {//在数组里面找到了   883群有三条  其他都是一条，一共5个群
+                    if (in_array($value['pushing_authority']['flock_sn'], $flock)) {
                         $info[$value['pushing_authority']['flock_sn']][] = $this->text($items);
-                    } else {//这是没有找到
+                    } else {
                         $array[] = $this->text($items);
                         $info[$value['pushing_authority']['flock_sn']] = $array;
                         $flock[] = $value['pushing_authority']['flock_sn'];
                     }
                 }
             }
-            foreach ($info as $key=>$val){
-                $fileData = $this->pushImageDispose($val);
+            foreach ($info as $key => $val) {
+                $fileData = $this->pushImageDispose($val, 'individual');
                 $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $fileData['save_path']);
                 $dataInfo = app('api')->withRealException()->pushingDing([
                     'chatid' => $key,
-                    'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储失败,错误：' . $pushImage['errmsg']),
+                    'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
                 ]);
                 $date = date('Y-m-d H:i:s');
                 $array[] = [
                     'sender_staff_sn' => null,
                     'sender_staff_name' => '定时20:00推送',
                     'ding_flock_sn' => $key,
-                    'ding_flock_name' => DB::table('ding_group')->where('group_sn',$key)->value('group_name'),
+                    'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
                     'staff_sn' => null,
                     'pushing_type' => 3,
                     'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
                     'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
-                    'pushing_info' => config('app.url') . '/storage/image/' . $fileData['file_name'],
+                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
             }
             $this->pushingLogModel->insert($array);
         }
+    }
+
+    protected function errorDispose($err, $key, $file)
+    {
+        $this->pushingLogModel->create([
+            'sender_staff_sn' => null,
+            'sender_staff_name' => '定时20:00推送',
+            'ding_flock_sn' => $key,
+            'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
+            'staff_sn' => null,
+            'pushing_type' => 3,
+            'states' => 0,
+            'error_message' => '图片存储失败,错误：' . $err,
+            'pushing_info' => config('app.url') . '/storage/image/individual/' . $file,
+        ]);
     }
 
     protected function pushImageDispose($text, $path = '')
@@ -193,7 +208,7 @@ class PushCommand extends Command
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'].'   说明：当前生成为昨天20:00-今天19:59被大爱且未付款人员');
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'] . '   说明：当前生成为昨天20:00-今天19:59被大爱且未付款人员');
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {

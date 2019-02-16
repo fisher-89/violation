@@ -21,26 +21,26 @@ class PushAuthService
     public function start($request)
     {
         $pushing = $this->pushingModel->create($request->all());
-        return response()->json($pushing,201);
+        return response()->json($pushing, 201);
     }
 
     public function editPush($request)
     {
         $pushData = $this->pushingModel->find($request->route('id'));
-        if($pushData == false){
-            abort(404,'未找到数据');
+        if ($pushData == false) {
+            abort(404, '未找到数据');
         }
         $pushData->update($request->all());
-        return response()->json($pushData,201);
+        return response()->json($pushData, 201);
     }
 
     public function delPush($request)
     {
         $push = $this->pushingModel->find($request->route('id'));
-        if($push == false){
-            abort(404,'未找到数据');
+        if ($push == false) {
+            abort(404, '未找到数据');
         }
         $push->delete();
-        return response('',204);
+        return response('', 204);
     }
 }

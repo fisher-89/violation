@@ -63,7 +63,7 @@ class ImageController extends Controller
                 }
                 $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
             }
-            $save_path = $this->pushImageDispose($text, 'group/');//推送的图片处理
+            $save_path = $this->pushImageDispose($text, 'individual/');//推送的图片处理
             $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
             $array = [];
             foreach ($dingSn as $item) {
@@ -81,7 +81,7 @@ class ImageController extends Controller
                     'pushing_type' => 1,
                     'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
                     'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
-                    'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
@@ -128,7 +128,7 @@ class ImageController extends Controller
                     'pushing_type' => 2,
                     'states' => 0,
                     'error_message' => '未找到钉钉编号',
-                    'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
@@ -148,7 +148,7 @@ class ImageController extends Controller
                 'pushing_type' => 2,
                 'states' => $dataInfo['errcode'] == 0 ? 1 : 0,
                 'error_message' => $dataInfo['errcode'] == 0 ? '请以实际接收到信息为准' : '钉钉：' . $dataInfo['errmsg'],
-                'pushing_info' => config('app.url') . '/storage/image/' . $save_path['file_name'],
+                'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
                 'created_at' => $date,
                 'updated_at' => $date,
             ];

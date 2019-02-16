@@ -122,7 +122,7 @@ class PunishController extends Controller
                         }
                     }
                 }],
-                'pushing.*' =>['required', Rule::exists('pushing_authority','id')->where('staff_sn',$request->user()->staff_sn),] ,
+                'pushing.*' => ['required', Rule::exists('pushing_authority', 'id')->where('staff_sn', $request->user()->staff_sn),],
                 'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff, $id, $punish) {
                     if ($staff == null) {
                         return $event('被大爱员工编号未找到');
@@ -214,7 +214,7 @@ class PunishController extends Controller
     }
 
     /**
-     * 付款状态双休改变
+     * 付款状态双向改变
      *
      * @param Request $request
      * @return array

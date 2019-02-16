@@ -26,7 +26,7 @@ class TotalController extends Controller
      */
     public function getStaffTotal(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],199);
+        $this->authority($request->user()->authorities['oa'], 199);
         return $this->totalService->getStaff($request);
     }
 
@@ -38,17 +38,17 @@ class TotalController extends Controller
      */
     public function payStatus(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],203);
+        $this->authority($request->user()->authorities['oa'], 203);
         return $this->totalService->updateMoneyStatus($request->all());
     }
 
     public function billImage(Request $request)
     {
-        $this->authority($request->user()->authorities['oa'],212);
+        $this->authority($request->user()->authorities['oa'], 212);
         return $this->totalService->billImage($request);
     }
 
-    protected function authority($oa,$code)
+    protected function authority($oa, $code)
     {
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');
