@@ -17,6 +17,7 @@ class PushingLog extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'sender_staff_sn', 'sender_staff_name', 'ding_flock_sn', 'ding_flock_name', 'staff_sn','pushing_type', 'states', 'error_message', 'pushing_info'
+        'sender_staff_sn', 'sender_staff_name', 'ding_flock_sn', 'ding_flock_name',
+        'staff_sn', 'pushing_type', 'states', 'error_message', 'pushing_info', 'is_clear'
     ];
 }

@@ -26,41 +26,35 @@ class ImageController extends Controller
 
     public function punishImage(Request $request)
     {
+        $staffSn = $request->user()->staff_sn;
         $this->validate($request, [
             'push_type' => 'between:1,1|present',
             'push_id' => 'array|required',
-            'push_id.*' => ['numeric', $request->push_type == 2 ? 'present' : 'required'],
+            'push_id.*' => ['numeric', $request->push_type == 2 ? 'present' : 'required', function ($attribute, $value, $event) use ($staffSn) {
+                $string = $this->pushingModel->where('id', $value)->value('staff_sn');
+                if ($string == false) {
+                    return $event('未找到推送群');
+                } else if ($staffSn != $string) {
+                    return $event('你没有推送权限');
+                }
+            }],
         ], [], [
             'push_type' => '推送类型',
             'push_id' => '推送群',
             'push_id.*' => '推送群',
         ]);
-        $staffSn = $request->user()->staff_sn;
         $all = $request->all();
-        $pushType = $all['push_type'] == 2 ? false : true;
+        $pushType = $all['push_type'] == 2 ? false : true;// 1:群推送，2:单人推送，3:群和单人
         $data = isset($all['push_id']) ? $all['push_id'] : abort(400, '数据格式错误');
         $punish = $this->punishModel->when($request->all() == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'));
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
-//        if (count($punish) == 0) {
-//            $punish = $this->punishModel->when($request->all() == false, function ($query) {
-//                $query->whereDate('created_at', date('Y-m-d', strtotime("-1 day")));
-//            })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
-//        }
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
+        $date = date('Y-m-d H:i:s');
         if ($data != [] && $pushType === true) {
             $dingSn = [];
             foreach ($data as $k => $v) {
                 $push = $this->pushingModel->where('id', $v)->first();
-                if ($push == false) {
-                    abort(404, '未找到推送的群');
-                }
-                if ($push['is_lock'] == 1) {
-                    abort(404, '群名字：' . $push['flock_name'] . '推送权限被冻结，请联系管理员');
-                }
-                if ($push->staff_sn != $staffSn) {
-                    abort(401, '暂无推送' . $push['flock_name'] . '群的权限');
-                }
                 $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
             }
             $save_path = $this->pushImageDispose($text, 'individual/');//推送的图片处理
@@ -71,7 +65,6 @@ class ImageController extends Controller
                     'chatid' => $item['flock_sn'],
                     'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : abort(500, '图片存储失败,错误：' . $pushImage['errmsg']),
                 ]);
-                $date = date('Y-m-d H:i:s');
                 $array[] = [
                     'sender_staff_sn' => $staffSn,
                     'sender_staff_name' => $request->user()->realname,
@@ -82,15 +75,15 @@ class ImageController extends Controller
                     'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
                     'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
                     'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                    'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
             }
             $this->pushingLogModel->insert($array);
         }
-        if ($pushType != 1) {
-            echo response('', 201);
-            $this->sentinelPush($punish, $request);// todo 先返回再执行
+        if ($pushType != 1) {//todo 异步执行
+            $this->sentinelPush($punish, $request);
         } else {
             return response('', 201);
         }
@@ -129,6 +122,7 @@ class ImageController extends Controller
                     'states' => 0,
                     'error_message' => '未找到钉钉编号',
                     'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                    'is_clear' => 1,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
@@ -149,6 +143,7 @@ class ImageController extends Controller
                 'states' => $dataInfo['errcode'] == 0 ? 1 : 0,
                 'error_message' => $dataInfo['errcode'] == 0 ? '请以实际接收到信息为准' : '钉钉：' . $dataInfo['errmsg'],
                 'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
                 'created_at' => $date,
                 'updated_at' => $date,
             ];
@@ -374,15 +369,30 @@ class ImageController extends Controller
 
     public function updatePush(Request $request)
     {
-        $push = $this->pushingModel->find($request->route('id'));
-        if ($push == false) {
-            abort(404, '未找到数据');
+        $this->validate($request, [
+            'pushing' => 'array|required',
+            'pushing.*' => 'numeric'
+        ], [], [
+            'pushing' => '推送群'
+            ]
+        );
+        $pushingObj = $this->pushingModel->where(['staff_sn'=>$request->user()->staff_sn,'default_push'=>1])->get();
+        $pushingArray = is_array($pushingObj) ? [] : $pushingObj->toArray();
+        foreach ($pushingArray as $val){
+            $this->pushingModel->where('id',$val['id'])->update(['default_push' => null] );
         }
-        if ($request->user()->staff_sn != $push->staff_sn) {
-            abort(500, '操作错误');
+        $i = 1;
+        foreach ($request->all() as $value) {
+            $push = $this->pushingModel->find($value);
+            if ($push == false) {
+                abort(404, '第'.$i.'个推送群未找到');
+            }
+            if ($request->user()->staff_sn != $push->staff_sn) {
+                abort(500, '操作错误');
+            }
+            $push->update(['default_push' => 1]);
+            $i++;
         }
-        $sqlArray = $push->default_push == 1 ? ['default_push' => null] : ['default_push' => 1];
-        $push->update($sqlArray);
         return response($push, 201);
     }
 
