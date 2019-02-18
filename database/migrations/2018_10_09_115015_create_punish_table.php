@@ -131,6 +131,7 @@ class CreatePunishTable extends Migration
             $table->unsignedTinyInteger('states')->comment('1:成功，0:失败');
             $table->text('error_message')->comment('错误信息')->nullable();
             $table->text('pushing_info')->comment('推送信息')->nullable();
+            $table->unsignedTinyInteger('is_clear')->comment('图片是否被清除，1:清除');
             $table->timestamps();
             $table->softDeletes();
         });
