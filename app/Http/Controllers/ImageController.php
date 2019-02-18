@@ -389,8 +389,9 @@ class ImageController extends Controller
             }
             $push->update(['default_push' => 1]);
             $i++;
+            $pushArr[] = $push;
         }
-        return response($push, 201);
+        return response($pushArr, 201);
     }
 
     protected function authority($oa, $code)
