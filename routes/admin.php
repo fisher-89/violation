@@ -36,7 +36,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     });
     $admin->group(['prefix' => 'push'], function (RouteContract $admin) {
         $admin->get('/auth', Controllers\ImageController::class . '@pushingAuthList');//当前用户能推送的群
-        $admin->post('/', Controllers\ImageController::class . '@updatePush');//改变当前用户默认推送群
+        $admin->post('', Controllers\ImageController::class . '@updatePush');//改变当前用户默认推送群
         $admin->post('/image', Controllers\ImageController::class . '@punishImage');//钉钉推送
         $admin->get('/log', Controllers\ImageController::class . '@pushingLog');//钉钉推送记录列
         $admin->get('/my-log', Controllers\ImageController::class . '@myPushingLog');//我的推送记录
