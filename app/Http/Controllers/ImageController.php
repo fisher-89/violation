@@ -369,21 +369,17 @@ class ImageController extends Controller
 
     public function updatePush(Request $request)
     {
-        $this->validate($request, [
-            'pushing' => 'array|required',
-            'pushing.*' => 'numeric'
-        ], [], [
-                'pushing' => '推送群',
-                'pushing.*' => '推送群'
-            ]
-        );
+        $all = $request->all();
+        if($all == false){
+            abort(404,'未找到数据');
+        }
         $pushingObj = $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn, 'default_push' => 1])->get();
         $pushingArray = is_array($pushingObj) ? [] : $pushingObj->toArray();
         foreach ($pushingArray as $val) {
             $this->pushingModel->where('id', $val['id'])->update(['default_push' => null]);
         }
         $i = 1;
-        foreach ($request->all() as $value) {
+        foreach ($all as $value) {
             $push = $this->pushingModel->find($value);
             if ($push == false) {
                 abort(404, '第' . $i . '个推送群未找到');
