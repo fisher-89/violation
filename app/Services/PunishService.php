@@ -356,13 +356,12 @@ class PunishService
     /**
      * @param $request
      * @return array
-     * @throws \Illuminate\Auth\Access\AuthorizationException  按群进行赛选
+     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
     public function punishList($request)
     {
         return $this->punishModel->with('rules.ruleTypes')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
-
 
     /**
      * 详细页面的支付状态双向改变
