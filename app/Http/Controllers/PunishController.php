@@ -137,10 +137,8 @@ class PunishController extends Controller
                 }],//被大爱者编号
                 'staff_name' => 'required|max:10',//被大爱者名字
                 'billing_at' => ['required', 'date', 'after_or_equal:violate_at', function ($attribute, $value, $event) use ($id, $punish) {
-                    if ($id == true) {
-                        if (substr($value, 0, 7) != substr($punish->billing_at, 0, 7)) {
-                            return $event('开单时间不能跨月修改');
-                        }
+                    if (substr($value, 0, 7) != substr($punish->billing_at, 0, 7)) {
+                        return $event('开单时间不能跨月');
                     }
                 }],//开单时间
                 'billing_sn' => ['required', 'numeric',
