@@ -243,7 +243,8 @@ class PunishService
         $data['ruleId'] = $request->rule_id;
         $data['violateAt'] = $request->violate_at;
         $howNumber = $this->countData($data);
-        $punish = $this->punishModel->find($request->route('id'));
+        $id = $request->route('id');
+        $punish = $this->punishModel->find($id);
         if ($punish == null) {
             abort(404, '未找到数据');
         }
@@ -255,10 +256,20 @@ class PunishService
         $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
         if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
             $punish->rules = $rule;
+            $punish->pushing = $request->pushing;
             return $punish;
         }
         try {
             DB::beginTransaction();
+            $this->punishHasAuthModel->where('punish_id',$id)->delete();
+            $hasArray = [];
+            foreach ($request->pushing as $hasItem) {
+                $hasArray[] = [
+                    'punish_id' => $punish->id,
+                    'auth_id' => $hasItem
+                ];
+            }
+            $this->punishHasAuthModel->insert($hasArray);
             $this->reduceCount($punish);
             if ($punish->point_log_id == true) {
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
@@ -272,7 +283,7 @@ class PunishService
                 if (!isset($point['id'])) {
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
-                $punish->update(['point_log_id' => $point['id']]);//todo 编辑未过推送时间的群
+                $punish->update(['point_log_id' => $point['id']]);
             }
             $request->brand_name = $staff['brand']['name'];
             $request->department_id = $staff['department_id'];
@@ -282,6 +293,7 @@ class PunishService
             abort(500, '修改失败，错误：' . $exception->getMessage());
         }
         $punish->rules = $rule;
+        $punish->pushing = $request->pushing;
         return response($punish, 201);
     }
 
