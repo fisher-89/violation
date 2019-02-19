@@ -32,8 +32,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
 
         $admin->get("/export", Controllers\ExcelController::class . "@export");//Excel导出
         $admin->post("/import", Controllers\ExcelController::class . "@import");//Excel导入
-//        $admin->get("/example", Controllers\ExcelController::class . "@example");//导入模板
-        $admin->get("/example", function(){return 456789;});//导入模板
+        $admin->get("/example", Controllers\ExcelController::class . "@example");//导入模板
     });
     $admin->group(['prefix' => 'push'], function (RouteContract $admin) {
         $admin->get('/auth', Controllers\ImageController::class . '@pushingAuthList');//当前用户能推送的群
