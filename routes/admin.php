@@ -71,4 +71,3 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     });
 });
 Route::get('/punish/image', Controllers\ImageController::class . '@punishImage');
-Route::get("/punish/example", Controllers\ExcelController::class . "@example");

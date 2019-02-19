@@ -246,10 +246,10 @@ class ExcelController extends Controller
     /**
      * Excel 导入模板
      */
-    public function example()
+    public function example(Request $request)
     {
         $assist = DB::table('rules')->get();
-        $pushingObj = DB::table('pushing_authority')->where('staff_sn', Auth::user()->staff_sn)->get();
+        $pushingObj = DB::table('pushing_authority')->where('staff_sn', $request->user()->staff_sn)->get();
         $rule = array_column($assist == null ? [] : $assist->toArray(), 'name');
         $flockName = array_column($pushingObj == null ? [] : $assist->toArray(), 'flock_name');
         $cellData[] = ['员工编号', '员工姓名', '开单日期', '大爱名称', '违纪时间', '开单人编号', '开单人姓名', '是否付款', '付款时间', '备注', '推送的群', '同步积分制'];
@@ -263,7 +263,7 @@ class ExcelController extends Controller
         }
         Excel::create('大爱录入范例文件', function ($excel) use ($cellData, $data) {
             $excel->sheet('辅助表', function ($sheet) use ($data) {
-                $sheet->cells('A1-B1', function ($cells) {
+                $sheet->cells('A1:B1', function ($cells) {
                     $cells->setAlignment('center');
                     $cells->setBackground('#D2E9FF');
                 });
