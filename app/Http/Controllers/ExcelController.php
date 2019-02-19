@@ -251,14 +251,14 @@ class ExcelController extends Controller
         $assist = DB::table('rules')->get();
         $pushingObj = DB::table('pushing_authority')->where('staff_sn', $request->user()->staff_sn)->get();
         $rule = array_column($assist == null ? [] : $assist->toArray(), 'name');
-        $flockName = array_column($pushingObj == null ? [] : $assist->toArray(), 'flock_name');
+        $flockName = array_column($pushingObj == null ? [] : $pushingObj->toArray(), 'flock_name');
         $cellData[] = ['员工编号', '员工姓名', '开单日期', '大爱名称', '违纪时间', '开单人编号', '开单人姓名', '是否付款', '付款时间', '备注', '推送的群', '同步积分制'];
         $cellData[] = ['例：100000（被大爱编号）', '例：张三（被大爱姓名）', '例：2018-01-01（开单时间）', '例：迟到30分钟内（制度名称全写）', '例：2018-01-01', '例：100000（开单人编号）', '例：李四', '例：0（0：表示没有付款，1：表示已经付款）', '例：2018-01-01（没有付款这里为空）', '默认为空', '例：喜歌实业重要通知群','默认不同步，1:同步'];
         $data[] = ['大爱名称', '能推送的群'];
         for ($i = 0; $i < count(max($rule, $flockName)); $i++) {
             $data[] = [
                 isset($rule[$i]) ? $rule[$i] : '',
-                isset($pushing[$i]) ? $flockName[$i] : ''
+                isset($flockName[$i]) ? $flockName[$i] : ''
             ];
         }
         Excel::create('大爱录入范例文件', function ($excel) use ($cellData, $data) {
