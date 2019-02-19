@@ -21,7 +21,7 @@ class PushCollection extends ResourceCollection
                 'staff_sn' => $data->staff_sn,
                 'staff_name' => $data->staff_name,
                 'flock_name' => $data->flock_name,
-                'is_lock' => $data->is_lock,
+                'default_push' => $data->default_push,
             ];
         });
     }
