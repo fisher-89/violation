@@ -60,7 +60,7 @@ trait UserHelper
     }
 
     /**
-     * Make a http request. 默认:OA ,积分制:1，钉钉:2
+     * Make a http request. 默认:OA ,积分制:1，钉钉:2 ，定时任务客户端授权:3
      *
      * @param string $method
      * @param string $endpoint
@@ -76,7 +76,11 @@ trait UserHelper
             } else if ($point == 2) {
                 return $this->unwrapResponse($this->getHttpClient($this->getDingOptions())->{$method}($endpoint .
                     '?access_token=' . $this->get('api/get_dingtalk_access_token')['message'], $options));
-            } else {
+            } else if ($point == 3) {
+                $accessToken = $this->client()->get('api/get_dingtalk_access_token')['message'];
+                return $this->unwrapResponse($this->getHttpClient($this->getDingOptions())->{$method}($endpoint .
+                    '?access_token=' . $accessToken, $options));
+            }else {
                 return $this->unwrapResponse($this->getHttpClient($this->getBaseOptions())->{$method}($endpoint, $options));
             }
         } catch (ClientException $exception) {
@@ -144,7 +148,6 @@ trait UserHelper
     {
         $contentType = $response->getHeaderLine('Content-Type');
         $contents = $response->getBody()->getContents();
-
         if (false !== stripos($contentType, 'json') || stripos($contentType, 'javascript')) {
             return json_decode($contents, true);
         } elseif (false !== stripos($contentType, 'xml')) {

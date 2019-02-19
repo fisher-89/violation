@@ -193,4 +193,26 @@ trait ResourceLibrary
     {
         return $this->postDingImage('/media/upload', $data, [], 2);
     }
+
+    /**
+     * 钉钉定时任务图片存储
+     *
+     * @param $data
+     * @return mixed
+     */
+    public function taskPushingDingImage($data)
+    {
+        return $this->postDingImage('/media/upload', $data, [], 3);
+    }
+
+    /**
+     * 钉钉定时任务图片发送
+     *
+     * @param $arr
+     * @return mixed
+     */
+    public function taskPushingDing($arr)
+    {
+        return $this->postDing('/chat/send', $arr, [], 3);
+    }
 }

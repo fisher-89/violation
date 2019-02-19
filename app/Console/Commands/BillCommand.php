@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Punish;
 use App\Models\BillImage;
+use App\Models\PushingLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -24,17 +25,19 @@ class BillCommand extends Command
     protected $description = 'Command description';
     protected $billModel;
     protected $punishModel;
+    protected $pushingLogModel;
 
     /**
      * Create a new command instance.
      *
      * @return void
      */
-    public function __construct(Punish $punish, BillImage $billImage)
+    public function __construct(Punish $punish, BillImage $billImage, PushingLog $pushingLog)
     {
         parent::__construct();
         $this->punishModel = $punish;
         $this->billModel = $billImage;
+        $this->pushingLogModel = $pushingLog;
     }
 
     /**
@@ -44,8 +47,8 @@ class BillCommand extends Command
      */
     public function handle()
     {
-        $this->imageClear();// todo 测试可用性
-        $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
+        $this->imageClear();
+        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
             date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid', 0)->with('rules')->get();
         $arr = is_array($punish) ? [] : $punish->toArray();
         $pushData = [999999];
@@ -90,7 +93,7 @@ class BillCommand extends Command
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
+            'file_path' => storage_path() . '/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -135,7 +138,7 @@ class BillCommand extends Command
         $border_color = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
         $white_color = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
         imagefill($img, 0, 0, $bg_color);//填充图片背景色
-        $logo = 'image/bg.png';//水印图片
+        $logo = public_path() . '/image/bg.png';//水印图片
         $watermark = imagecreatefromstring(file_get_contents($logo));
         list($logoWidth, $logoHeight, $logoType) = getimagesize($logo);
         $w = imagesx($watermark);
@@ -239,25 +242,28 @@ class BillCommand extends Command
     {
         $billArr = $this->billModel->where('is_clear', '0')->whereBetween('created_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
             date("Y-m-d 23:59:59", strtotime('-7 days'))])->get();
-        $folder = '../storage/app/public/image/individual/';
         foreach ($billArr as $value) {
-            $ext = array('php', 'htm', 'html'); //带有这些扩展名的文件不会被删除
-            $o = opendir($folder);
-            while ($file = readdir($o)) {
-                if ($file != '.' && $file != '..' && !in_array(substr($file, strrpos($file, '.') + 1), $ext)) {
-                    $fullPath = $folder . '/' . $value->file_name;
-                    if (is_dir($fullPath)) {
-                        trash($fullPath);
-                        @rmdir($fullPath);
-                    } else {
-                        if (time() - filemtime($fullPath) > 7) {
-                            unlink($fullPath);
-                        }
-                    }
-                }
+            $fullPath = 'image/individual/' . $value->file_name;
+            if (Storage::disk('public')->exists($fullPath)) {
+                Storage::disk('public')->delete($fullPath);
             }
-            closedir($o);
-            $this->billModel->where('id', $value->id)->update(['is_clear', '1']);
+            $this->billModel->where('id', $value->id)->update(['is_clear' => '1']);
+        }
+        $logArr = $this->pushingLogModel->where('is_clear', '0')->whereBetween('created_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),//-2
+            date("Y-m-d 23:59:59", strtotime('-7 days'))])->get();//strtotime(-1 month)
+        foreach ($logArr as $items) {
+            $fillPath = 'image/individual/' . basename($items->pushing_info);
+            if (Storage::disk('public')->exists($fillPath)) {
+                Storage::disk('public')->delete($fillPath);
+            }
+            $this->pushingLogModel->where('id', $items->id)->update(['is_clear' => '1']);
+        }
+        $allFile = Storage::disk('public')->allFiles('image/individual/');
+        foreach ($allFile as $value) {
+            $saveTime = Storage::disk('public')->lastModified($value);
+            if (time() - $saveTime > 30 * 24 * 60 * 60) {
+                Storage::disk('public')->delete($value);
+            }
         }
     }
 }

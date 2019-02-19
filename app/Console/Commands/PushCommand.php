@@ -47,7 +47,7 @@ class PushCommand extends Command
      */
     public function handle()
     {
-        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 20:00:00', strtotime('-1 day')),
+        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 20:00:00', strtotime('-4 day')),
             date('Y-m-d 19:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
         $arr = is_array($punish) ? [] : $punish->toArray();
         if ($arr != []) {
@@ -64,13 +64,31 @@ class PushCommand extends Command
                     }
                 }
             }
+//            unset($punish, $flock, $array);
+//            ini_set('memory_limit', '1024M');
             foreach ($info as $key => $val) {
-                $fileData = $this->pushImageDispose($val, 'individual');
-                $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $fileData['save_path']);
-                $dataInfo = app('api')->withRealException()->pushingDing([
-                    'chatid' => $key,
-                    'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
-                ]);
+                try {
+                    $fileData = $this->pushImageDispose($val, 'individual/');
+                    $pushImage = app('api')->withRealException()->taskPushingDingImage($fileData['save_path']);
+                    $dataInfo = app('api')->withRealException()->taskPushingDing([
+                        'chatid' => $key,
+                        'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
+                    ]);
+                }catch (\Exception $exception){
+                    $this->pushingLogModel->create([
+                        'sender_staff_sn' => null,
+                        'sender_staff_name' => '定时20:00推送',
+                        'ding_flock_sn' => isset($key) && $key!=false ? $key : null,
+                        'ding_flock_name' => isset($key) && $key!=false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
+                        'staff_sn' => null,
+                        'pushing_type' => 3,
+                        'states' => 0,
+                        'error_message' => '错误:'.$exception->getMessage(),
+                        'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
+                        'is_clear' => 1,
+                    ]);
+                }
+//                unset($pushImage);
                 $date = date('Y-m-d H:i:s');
                 $array[] = [
                     'sender_staff_sn' => null,
@@ -82,11 +100,26 @@ class PushCommand extends Command
                     'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
                     'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
                     'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
+                    'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
+
             }
             $this->pushingLogModel->insert($array);
+        }else{
+            $this->pushingLogModel->create([
+                'sender_staff_sn' => null,
+                'sender_staff_name' => '定时20:00推送',
+                'ding_flock_sn' => null,
+                'ding_flock_name' => '无法推送',
+                'staff_sn' => null,
+                'pushing_type' => 3,
+                'states' => 0,
+                'error_message' => '没有找到推送的数据',
+                'pushing_info' => null,
+                'is_clear' => 1,
+            ]);
         }
     }
 
@@ -100,8 +133,9 @@ class PushCommand extends Command
             'staff_sn' => null,
             'pushing_type' => 3,
             'states' => 0,
-            'error_message' => '图片存储失败,错误：' . $err,
+            'error_message' => '向钉钉存储图片失败,错误：' . $err,
             'pushing_info' => config('app.url') . '/storage/image/individual/' . $file,
+            'is_clear' => 1
         ]);
     }
 
@@ -117,7 +151,7 @@ class PushCommand extends Command
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
+            'file_path' => storage_path() . '/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -162,7 +196,7 @@ class PushCommand extends Command
         $border_color = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
         $white_color = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
         imagefill($img, 0, 0, $bg_color);//填充图片背景色
-        $logo = 'image/bg.png';//水印图片
+        $logo = public_path() . '/image/bg.png';//水印图片
         $watermark = imagecreatefromstring(file_get_contents($logo));
         list($logoWidth, $logoHeight, $logoType) = getimagesize($logo);
         $w = imagesx($watermark);
