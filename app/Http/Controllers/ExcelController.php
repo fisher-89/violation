@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DingGroup;
-use App\Models\PunishHasAuth;
-use App\Models\Pushing;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\PunishService;
 use App\Models\CountHasPunish;
 use App\Services\CountService;
+use App\Models\PunishHasAuth;
 use Illuminate\Http\Request;
 use App\Models\CountStaff;
+use App\Models\DingGroup;
+use App\Models\Pushing;
 use App\Http\Requests;
 use App\Models\Punish;
 use App\Models\Rules;
