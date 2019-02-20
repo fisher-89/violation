@@ -54,7 +54,7 @@ class ExcelController extends Controller
     public function export(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 205);
-        $model = $this->punishModel->with('rules.ruleTypes');
+        $model = $this->punishModel->with(['rules.ruleTypes','pushing.pushingAuthority']);
         return $this->excelData($request, $model);
     }
 
@@ -459,7 +459,8 @@ class ExcelController extends Controller
         return $this->excelData($request, $model);
     }
 
-    protected function excelData($request, $model)
+    protected function
+    excelData($request, $model)
     {
         $all = $request->all();
         if (array_key_exists('page', $all) || array_key_exists('pagesize', $all)) {
