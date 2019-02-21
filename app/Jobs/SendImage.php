@@ -1,157 +1,114 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Jobs;
 
-use App\Models\Punish;
-use App\Models\BillImage;
-use App\Models\PushingLog;
-use Illuminate\Console\Command;
+use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
-class PushCommand extends Command
+class SendImage implements ShouldQueue
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'command:pushCommand';
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $arrData;
     /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
-    protected $billModel;
-    protected $punishModel;
-    protected $pushingLogModel;
-
-    /**
-     * Create a new command instance.
+     * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(Punish $punish, BillImage $billImage, PushingLog $pushingLog)
+    public function __construct($punish)
     {
-        parent::__construct();
-        $this->punishModel = $punish;
-        $this->billModel = $billImage;
-        $this->pushingLogModel = $pushingLog;
+        $this->arrData = $punish;
     }
 
     /**
-     * Execute the console command.
+     * Execute the job.
      *
-     * @return mixed
+     * @return void
      */
     public function handle()
     {
-        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 20:00:00', strtotime('-1 day')),
-            date('Y-m-d 19:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
-        $arr = is_array($punish) ? [] : $punish->toArray();
-        if ($arr != []) {
-            $flock = [];
-            foreach ($arr as $items) {
-                foreach ($items['pushing'] as $value) {
-                    $array = [];
-                    if (in_array($value['pushing_authority']['flock_sn'], $flock)) {
-                        $info[$value['pushing_authority']['flock_sn']][] = $this->text($items);
-                    } else {
-                        $array[] = $this->text($items);
-                        $info[$value['pushing_authority']['flock_sn']] = $array;
-                        $flock[] = $value['pushing_authority']['flock_sn'];
-                    }
+        $arr = $this->arrData;
+        $pushData = [999999];
+        foreach ($arr as $key => $value) {
+            if (in_array($value['staff_sn'], $pushData)) {
+                continue;
+            }
+            $staff = [];
+            foreach ($arr as $k => $val) {
+                if ($val['has_paid'] == 1) {
+                    continue;//已付款的跳过
+                }
+                if ($val['staff_sn'] == $value['staff_sn']) {
+                    $staff[] = $val;
                 }
             }
-//            unset($punish, $flock, $array);
-//            ini_set('memory_limit', '1024M');
-            foreach ($info as $key => $val) {
-                try {
-                    $fileData = $this->pushImageDispose($val, 'individual/');
-                    $pushImage = app('api')->withRealException()->taskPushingDingImage($fileData['save_path']);
-                    $dataInfo = app('api')->withRealException()->taskPushingDing([
-                        'chatid' => $key,
-                        'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
-                    ]);
-                }catch (\Exception $exception){
-                    $this->pushingLogModel->create([
-                        'sender_staff_sn' => null,
-                        'sender_staff_name' => '定时20:00推送',
-                        'ding_flock_sn' => isset($key) && $key!=false ? $key : null,
-                        'ding_flock_name' => isset($key) && $key!=false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
-                        'staff_sn' => null,
-                        'pushing_type' => 3,
-                        'states' => 0,
-                        'error_message' => '错误:'.$exception->getMessage(),
-                        'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
-                        'is_clear' => 1,
-                    ]);
-                }
-//                unset($pushImage);
-                $date = date('Y-m-d H:i:s');
+            $pushData[] = $value['staff_sn'];
+            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value), 'individual/');//生成图片
+            $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
+            $date = date('Y-m-d H:i:s');
+            if (!isset($staffInfo['dingtalk_number'])) {
                 $array[] = [
-                    'sender_staff_sn' => null,
-                    'sender_staff_name' => '定时20:00推送',
-                    'ding_flock_sn' => $key,
-                    'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
-                    'staff_sn' => null,
-                    'pushing_type' => 3,
-                    'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
-                    'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
-                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
-                    'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
+                    'sender_staff_sn' => Auth::user()->staff_sn,
+                    'sender_staff_name' => Auth::user()->realname,
+                    'ding_flock_sn' => null,
+                    'ding_flock_name' => $staffInfo['realname'],
+                    'staff_sn' => $staffInfo['staff_sn'],
+                    'pushing_type' => 2,
+                    'states' => 0,
+                    'error_message' => '未找到钉钉编号',
+                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                    'is_clear' => 1,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
-
+                continue;
             }
-            $this->pushingLogModel->insert($array);
-        }else{
-            $this->pushingLogModel->create([
-                'sender_staff_sn' => null,
-                'sender_staff_name' => '定时20:00推送',
-                'ding_flock_sn' => null,
-                'ding_flock_name' => '无法推送',
-                'staff_sn' => null,
-                'pushing_type' => 3,
-                'states' => 0,
-                'error_message' => '没有找到推送的数据',
-                'pushing_info' => null,
-                'is_clear' => 1,
+            $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
+            $dataInfo = app('api')->withRealException()->pushDingSentinel([
+                'userId' => $staffInfo['dingtalk_number'],
+                'data' => isset($media['media_id']) ? $media['media_id'] : abort(500, '图片存储发生错误,错误：' . $media['errmsg']),
             ]);
+            $array[] = [
+                'sender_staff_sn' => Auth::user()->staff_sn,
+                'sender_staff_name' => Auth::user()->realname,
+                'ding_flock_sn' => $staffInfo['dingtalk_number'],
+                'ding_flock_name' => $staffInfo['realname'],
+                'staff_sn' => $staffInfo['staff_sn'],
+                'pushing_type' => 2,
+                'states' => $dataInfo['errcode'] == 0 ? 1 : 0,
+                'error_message' => $dataInfo['errcode'] == 0 ? '请以实际接收到信息为准' : '钉钉：' . $dataInfo['errmsg'],
+                'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
+                'is_clear' => 0,
+                'created_at' => $date,
+                'updated_at' => $date,
+            ];
         }
+        DB::table('pushing_log')->insert($array);
     }
-
-    protected function errorDispose($err, $key, $file)
-    {
-        $this->pushingLogModel->create([
-            'sender_staff_sn' => null,
-            'sender_staff_name' => '定时20:00推送',
-            'ding_flock_sn' => $key,
-            'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
-            'staff_sn' => null,
-            'pushing_type' => 3,
-            'states' => 0,
-            'error_message' => '向钉钉存储图片失败,错误：' . $err,
-            'pushing_info' => config('app.url') . '/storage/image/individual/' . $file,
-            'is_clear' => 1
-        ]);
-    }
-
+    /**
+     * 文字数据转图片
+     *
+     * @param $text
+     * @return mixed
+     */
     protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
         $params = [
             'row' => count($text),
             'file_name' => uniqid('xg') . substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 6) . '.png',
-            'title' => date('Y年m月d日') . '大爱记录',
+            'title' => date('Y-m-d') . '大爱记录',
             'table_time' => date('Y-m-d H:i:s'),
             'data' => $text
         ];
         $base = [
             'border' => 30,//图片外边框
-            'file_path' => storage_path() . '/app/public/image/' . $path,//图片保存路径
+            'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
             'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
@@ -196,7 +153,7 @@ class PushCommand extends Command
         $border_color = imagecolorallocate($img, 204, 204, 204);//设定边框颜色
         $white_color = imagecolorallocate($img, 30, 80, 162);//设定边框颜色
         imagefill($img, 0, 0, $bg_color);//填充图片背景色
-        $logo = public_path() . '/image/bg.png';//水印图片
+        $logo = 'image/bg.png';//水印图片
         $watermark = imagecreatefromstring(file_get_contents($logo));
         list($logoWidth, $logoHeight, $logoType) = getimagesize($logo);
         $w = imagesx($watermark);
@@ -242,7 +199,7 @@ class PushCommand extends Command
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'] . '   说明：当前生成为昨天20:00-今天19:59被大爱且未付款人员');
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time']);
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
@@ -254,20 +211,36 @@ class PushCommand extends Command
         return $data;
     }
 
-    protected function text($value)
+
+    /**
+     * 数据提取
+     *
+     * @param $array
+     * @return array
+     */
+    protected function text($array)
     {
-        $ex = explode('-', $value['department_name']);
-        return [
-            'staff_name' => $value['staff_name'],
-            'department_name' => count($ex) > 3 ? $this->takeDepartment($ex) : $value['department_name'],
-            'billing_at' => $value['billing_at'],
-            'rules' => $value['rules']['name'],
-            'violate_at' => $value['violate_at'],
-            'quantity' => '第' . $value['quantity'] . '次',
-            'money' => $value['money']/* . '/' . $value['score']*/,
-        ];
+        foreach ($array as $key => $value) {
+            $ex = explode('-', $value['department_name']);
+            $arr[] = [
+                'staff_name' => $value['staff_name'],
+                'department_name' => count($ex) > 3 ? $this->takeDepartment($ex) : $value['department_name'],
+                'billing_at' => $value['billing_at'],
+                'rules' => $value['rules']['name'],
+                'violate_at' => $value['violate_at'],
+                'quantity' => '第' . $value['quantity'] . '次',
+                'money' => $value['money']/* . '/' . $value['score']*/,
+            ];
+        }
+        return $arr;
     }
 
+    /**
+     * 获取部门后三级
+     *
+     * @param $arr
+     * @return string
+     */
     protected function takeDepartment($arr)
     {
         $count = count($arr) - 4;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PushCollection;
+use App\Jobs\SendImage;
 use Illuminate\Http\Request;
 use App\Models\PushingLog;
 use App\Models\CountStaff;
@@ -45,9 +46,11 @@ class ImageController extends Controller
         ]);
         $all = $request->all();
         $pushType = $all['push_type'] == 2 ? false : true;// 1:群推送，2:单人推送，3:群和单人
-        $data = isset($all['push_id']) ? $all['push_id'] : abort(400, '数据格式错误');
-        $punish = $this->punishModel->when($request->all() == false, function ($query) {
-            $query->whereDate('created_at', date('Y-m-d'));
+        $data = isset($all['push_id']) ? $all['push_id'] : abort(400, '数据格式错误');//推送到哪个群的id
+        $punishArrId = isset($all['id']) ? $all['id'] : abort(400, '未找到操作人员id');//人员选取的id
+        $punish = $this->punishModel->when($all['id'] == false, function ($query) {
+            $query->whereDate('created_at', date('Y-m-d'))->where('has_paid', 0);
+        })->when($all['id'] == true, function ($query)use($punishArrId) {$query->whereIn('id', $punishArrId);
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
         $date = date('Y-m-d H:i:s');
@@ -82,73 +85,11 @@ class ImageController extends Controller
             }
             $this->pushingLogModel->insert($array);
         }
-        if ($pushType != 1) {//todo 异步执行
-            $this->sentinelPush($punish, $request);
+        if ($pushType != 1 && $punish != false) {
+            SendImage::dispatch($punish->toArray())->delay(now()->addMinutes(1));
         } else {
-            return response('', 201);
+            return response('', 200);
         }
-    }
-
-//等待hr和钉钉同步开发
-    protected function sentinelPush($arrData, $request)
-    {
-        $arr = is_array($arrData) ? $arrData : $arrData->toArray();
-        $pushData = [999999];
-        foreach ($arr as $key => $value) {
-            if (in_array($value['staff_sn'], $pushData)) {
-                continue;
-            }
-            $staff = [];
-            foreach ($arr as $k => $val) {
-                if ($val['pas_paid'] == 1) {
-                    continue;//已付款的跳过
-                }
-                if ($val['staff_sn'] == $value['staff_sn']) {
-                    $staff[] = $val;
-                }
-            }
-            $pushData[] = $value['staff_sn'];
-            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value), 'individual/');//生成图片
-            $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
-            $date = date('Y-m-d H:i:s');
-            if (!isset($staffInfo['dingtalk_number'])) {
-                $array[] = [
-                    'sender_staff_sn' => $request->user()->staff_sn,
-                    'sender_staff_name' => $request->user()->realname,
-                    'ding_flock_sn' => null,
-                    'ding_flock_name' => $staffInfo['realname'],
-                    'staff_sn' => $staffInfo['staff_sn'],
-                    'pushing_type' => 2,
-                    'states' => 0,
-                    'error_message' => '未找到钉钉编号',
-                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-                    'is_clear' => 1,
-                    'created_at' => $date,
-                    'updated_at' => $date,
-                ];
-                continue;
-            }
-            $media = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);
-            $dataInfo = app('api')->withRealException()->pushDingSentinel([
-                'userId' => $staffInfo['dingtalk_number'],
-                'data' => isset($media['media_id']) ? $media['media_id'] : abort(500, '图片存储发生错误,错误：' . $media['errmsg']),
-            ]);
-            $array[] = [
-                'sender_staff_sn' => $request->user()->staff_sn,
-                'sender_staff_name' => $request->user()->realname,
-                'ding_flock_sn' => $staffInfo['dingtalk_number'],
-                'ding_flock_name' => $staffInfo['realname'],
-                'staff_sn' => $staffInfo['staff_sn'],
-                'pushing_type' => 2,
-                'states' => $dataInfo['errcode'] == 0 ? 1 : 0,
-                'error_message' => $dataInfo['errcode'] == 0 ? '请以实际接收到信息为准' : '钉钉：' . $dataInfo['errmsg'],
-                'pushing_info' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-                'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
-                'created_at' => $date,
-                'updated_at' => $date,
-            ];
-        }
-        $this->pushingLogModel->insert($array);
     }
 
     /**
@@ -370,8 +311,8 @@ class ImageController extends Controller
     public function updatePush(Request $request)
     {
         $all = $request->all();
-        if($all == false){
-            abort(404,'未找到数据');
+        if ($all == false) {
+            abort(404, '未找到数据');
         }
         $pushingObj = $this->pushingModel->where(['staff_sn' => $request->user()->staff_sn, 'default_push' => 1])->get();
         $pushingArray = is_array($pushingObj) ? [] : $pushingObj->toArray();
