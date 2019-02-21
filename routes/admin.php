@@ -70,4 +70,3 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->delete("/{id}", Controllers\PushAuthController::class . '@delete');
     });
 });
-Route::get('/punish/image', Controllers\ImageController::class . '@punishImage');
