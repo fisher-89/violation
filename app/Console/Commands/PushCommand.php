@@ -66,47 +66,49 @@ class PushCommand extends Command
             }
 //            unset($punish, $flock, $array);
 //            ini_set('memory_limit', '1024M');
-            foreach ($info as $key => $val) {
-                try {
-                    $fileData = $this->pushImageDispose($val, 'individual/');
-                    $pushImage = app('api')->withRealException()->taskPushingDingImage($fileData['save_path']);
-                    $dataInfo = app('api')->withRealException()->taskPushingDing([
-                        'chatid' => $key,
-                        'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
-                    ]);
-                } catch (\Exception $exception) {
-                    $this->pushingLogModel->create([
+            if (isset($info)) {
+                foreach ($info as $key => $val) {
+                    try {
+                        $fileData = $this->pushImageDispose($val, 'individual/');
+                        $pushImage = app('api')->withRealException()->taskPushingDingImage($fileData['save_path']);
+                        $dataInfo = app('api')->withRealException()->taskPushingDing([
+                            'chatid' => $key,
+                            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
+                        ]);
+                    } catch (\Exception $exception) {
+                        $this->pushingLogModel->create([
+                            'sender_staff_sn' => null,
+                            'sender_staff_name' => '定时20:00推送',
+                            'ding_flock_sn' => isset($key) && $key != false ? $key : null,
+                            'ding_flock_name' => isset($key) && $key != false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
+                            'staff_sn' => null,
+                            'pushing_type' => 3,
+                            'states' => 0,
+                            'error_message' => '错误:' . $exception->getMessage(),
+                            'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
+                            'is_clear' => 1,
+                        ]);
+                    }
+//                unset($pushImage);
+                    $date = date('Y-m-d H:i:s');
+                    $array[] = [
                         'sender_staff_sn' => null,
                         'sender_staff_name' => '定时20:00推送',
-                        'ding_flock_sn' => isset($key) && $key != false ? $key : null,
-                        'ding_flock_name' => isset($key) && $key != false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
+                        'ding_flock_sn' => $key,
+                        'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
                         'staff_sn' => null,
                         'pushing_type' => 3,
-                        'states' => 0,
-                        'error_message' => '错误:' . $exception->getMessage(),
+                        'states' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 1 : 0) : 0,
+                        'error_message' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg']) : null,
                         'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
-                        'is_clear' => 1,
-                    ]);
-                }
-//                unset($pushImage);
-                $date = date('Y-m-d H:i:s');
-                $array[] = [
-                    'sender_staff_sn' => null,
-                    'sender_staff_name' => '定时20:00推送',
-                    'ding_flock_sn' => $key,
-                    'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
-                    'staff_sn' => null,
-                    'pushing_type' => 3,
-                    'states' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 1 : 0) : 0,
-                    'error_message' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'] ) : null,
-                    'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
-                    'is_clear' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 0 : 1) : 1,
-                    'created_at' => $date,
-                    'updated_at' => $date,
-                ];
+                        'is_clear' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 0 : 1) : 1,
+                        'created_at' => $date,
+                        'updated_at' => $date,
+                    ];
 
+                }
             }
-            $this->pushingLogModel->insert($array);
+            if (isset($array)) $this->pushingLogModel->insert($array);
         } else {
             $this->pushingLogModel->create([
                 'sender_staff_sn' => null,
