@@ -50,7 +50,8 @@ class ImageController extends Controller
         $punishArrId = isset($all['id']) ? $all['id'] : abort(400, '未找到操作人员id');//人员选取的id
         $punish = $this->punishModel->when($all['id'] == false, function ($query) {
             $query->whereDate('created_at', date('Y-m-d'))->where('has_paid', 0);
-        })->when($all['id'] == true, function ($query)use($punishArrId) {$query->whereIn('id', $punishArrId);
+        })->when($all['id'] == true, function ($query) use ($punishArrId) {
+            $query->whereIn('id', $punishArrId);
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
         $date = date('Y-m-d H:i:s');
@@ -113,7 +114,7 @@ class ImageController extends Controller
             'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => putenv('GDFONTPATH=' . realpath('.')),//字体文件路径
+            'font_ulr' => public_path() . '/Fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高
