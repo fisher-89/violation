@@ -74,17 +74,17 @@ class PushCommand extends Command
                         'chatid' => $key,
                         'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
                     ]);
-                }catch (\Exception $exception){
+                } catch (\Exception $exception) {
                     $this->pushingLogModel->create([
                         'sender_staff_sn' => null,
                         'sender_staff_name' => '定时20:00推送',
-                        'ding_flock_sn' => isset($key) && $key!=false ? $key : null,
-                        'ding_flock_name' => isset($key) && $key!=false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
+                        'ding_flock_sn' => isset($key) && $key != false ? $key : null,
+                        'ding_flock_name' => isset($key) && $key != false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
                         'staff_sn' => null,
                         'pushing_type' => 3,
                         'states' => 0,
-                        'error_message' => '错误:'.$exception->getMessage(),
-                        'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
+                        'error_message' => '错误:' . $exception->getMessage(),
+                        'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
                         'is_clear' => 1,
                     ]);
                 }
@@ -97,17 +97,17 @@ class PushCommand extends Command
                     'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
                     'staff_sn' => null,
                     'pushing_type' => 3,
-                    'states' => $dataInfo['errmsg'] == 'ok' ? 1 : 0,
-                    'error_message' => $dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'],
-                    'pushing_info' => config('app.url') . '/storage/image/individual/' . $fileData['file_name'],
-                    'is_clear' => $dataInfo['errmsg'] == 'ok' ? 0 : 1,
+                    'states' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 1 : 0) : 0,
+                    'error_message' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? null : $dataInfo['errmsg'] ) : null,
+                    'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
+                    'is_clear' => isset($dataInfo) ? ($dataInfo['errmsg'] == 'ok' ? 0 : 1) : 1,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ];
 
             }
             $this->pushingLogModel->insert($array);
-        }else{
+        } else {
             $this->pushingLogModel->create([
                 'sender_staff_sn' => null,
                 'sender_staff_name' => '定时20:00推送',
