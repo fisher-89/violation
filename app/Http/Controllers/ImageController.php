@@ -25,6 +25,12 @@ class ImageController extends Controller
         $this->pushingLogModel = $pushingLog;
     }
 
+    /**
+     * 图片处理 lmL6z770WU4MkCMKYGPpSh37XcJ1Q83zcsBeQMxr
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
     public function punishImage(Request $request)
     {
         $staffSn = $request->user()->staff_sn;
