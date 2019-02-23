@@ -45,13 +45,15 @@ class ImageController extends Controller
                     return $event('你没有推送权限');
                 }
             }],
+            'id' => 'array|required',
+            'id.*' => 'numeric|exists:punish,id'
         ], [], [
             'push_type' => '推送类型',
             'push_id' => '推送群',
             'push_id.*' => '推送群',
+            'id' => '被大爱人员'
         ]);
-        $all = $request->all();
-        $pushType = $all['push_type'] == 2 ? false : true;// 1:群推送，2:单人推送，3:群和单人
+        $all = $request->all();// 1:群推送，2:单人推送，3:群和单人
         $data = isset($all['push_id']) ? $all['push_id'] : abort(400, '数据格式错误');//推送到哪个群的id
         $punishArrId = isset($all['id']) ? $all['id'] : abort(400, '未找到操作人员id');//人员选取的id
         $punish = $this->punishModel->when($all['id'] == false, function ($query) {
@@ -61,7 +63,7 @@ class ImageController extends Controller
         })->with('rules')->filterByQueryString()->withPagination($request->get('pagesize', 10));
         $text = $punish->all() == true ? $this->text($punish->toArray()) : abort(404, '没有找到默认操作数据');
         $date = date('Y-m-d H:i:s');
-        if ($data != [] && $pushType === true) {
+        if ($data != [] && $all['push_type'] == 1 || $all['push_type'] == 3) {
             $dingSn = [];
             foreach ($data as $k => $v) {
                 $push = $this->pushingModel->where('id', $v)->first();
@@ -92,7 +94,7 @@ class ImageController extends Controller
             }
             $this->pushingLogModel->insert($array);
         }
-        if ($pushType != 1 && $punish != false) {
+        if ($punish != false && $all['push_type'] === 2 || $all['push_type'] == 3) {dd(987);
             SendImage::dispatch($punish->toArray())->delay(now()->addMinutes(1));
         } else {
             return response('', 200);

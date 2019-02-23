@@ -48,7 +48,7 @@ class SendImage implements ShouldQueue
                 }
             }
             $pushData[] = $value['staff_sn'];
-            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value), 'individual/');//生成图片
+            $save_path = $this->pushImageDispose(isset($staff) ? $this->text($staff) : $this->text($value), 'individual/');
             $staffInfo = app('api')->withRealException()->getStaff($value['staff_sn']);
             $date = date('Y-m-d H:i:s');
             if (!isset($staffInfo['dingtalk_number'])) {
