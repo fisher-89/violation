@@ -94,7 +94,7 @@ class ImageController extends Controller
             }
             $this->pushingLogModel->insert($array);
         }
-        if ($punish != false && $all['push_type'] === 2 || $all['push_type'] == 3) {dd(987);
+        if ($punish != false && $all['push_type'] === 2 || $all['push_type'] == 3) {
             SendImage::dispatch($punish->toArray())->delay(now()->addMinutes(1));
         } else {
             return response('', 200);
