@@ -26,7 +26,7 @@ class ImageController extends Controller
     }
 
     /**
-     * 图片处理 lmL6z770WU4MkCMKYGPpSh37XcJ1Q83zcsBeQMxr
+     * 图片处理
      *
      * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response

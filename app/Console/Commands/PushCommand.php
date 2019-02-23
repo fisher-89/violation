@@ -64,8 +64,6 @@ class PushCommand extends Command
                     }
                 }
             }
-//            unset($punish, $flock, $array);
-//            ini_set('memory_limit', '1024M');
             if (isset($info)) {
                 foreach ($info as $key => $val) {
                     try {
@@ -90,7 +88,6 @@ class PushCommand extends Command
                         ]);
                         continue;
                     }
-//                unset($pushImage);
                     $date = date('Y-m-d H:i:s');
                     $array[] = [
                         'sender_staff_sn' => null,
