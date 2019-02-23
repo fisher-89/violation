@@ -88,6 +88,7 @@ class PushCommand extends Command
                             'pushing_info' => isset($fileData) ? config('app.url') . '/storage/image/individual/' . $fileData['file_name'] : null,
                             'is_clear' => 1,
                         ]);
+                        continue;
                     }
 //                unset($pushImage);
                     $date = date('Y-m-d H:i:s');
