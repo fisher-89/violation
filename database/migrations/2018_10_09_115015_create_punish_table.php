@@ -148,6 +148,13 @@ class CreatePunishTable extends Migration
             $table->softDeletes();
         });
 
+        Schema::create('bill_staff', function (Blueprint $table) {
+            $table->unsignedInteger('bill_id')->index();
+            $table->unsignedInteger('staff_sn')->index();
+            $table->primary(['bill_id', 'staff_sn'], 'bill_id_staff_sn');
+            $table->foreign('bill_id')->references('id')->on('bill_image');
+        });
+
         Schema::create('ding_group', function (Blueprint $table) {
             $table->increments('id');
             $table->char('group_name', 20)->comment('群名称');
