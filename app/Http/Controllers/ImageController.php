@@ -62,7 +62,6 @@ class ImageController extends Controller
                 $dingSn[] = ['flock_sn' => $push['flock_sn'], 'flock_name' => $push['flock_name']];
             }
             $save_path = $this->pushImageDispose($text, 'individual/');//推送的图片处理
-            dd($save_path);
             $pushImage = app('api')->withRealException()->pushingDingImage(storage_path() . '/' . $save_path['save_path']);//图片存储到钉钉
             $array = [];
             foreach ($dingSn as $item) {
@@ -115,7 +114,7 @@ class ImageController extends Controller
             'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => public_path() . 'assets/msyh.ttc',//字体文件路径
+            'font_ulr' => public_path() . '/assets/fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高

@@ -89,36 +89,14 @@ class TotalService
         return $data;
     }
 
-    public function billImage($request)//数据监测如果图片被删   重新生成
+    /**
+     * 数据监测被删除旧重新生成
+     *
+     * @param $request
+     * @return mixed
+     */
+    public function billImage($request)
     {
-//        $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
-//            date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('has_paid',0)->with('rules')->get();
-//        $arr = is_array($punish) ? $punish : $punish->toArray();
-//        $pushData = [999999];
-//        foreach ($arr as $key => $value) {
-//            if (in_array($value['staff_sn'], $pushData)) {continue;}
-//            $staff = [];
-//            foreach ($arr as $k => $val) {
-//                if ($val['staff_sn'] == $value['staff_sn']) {
-//                    $staff[] = $val;
-//                }
-//            }
-//            $pushData[] = $value['staff_sn'];
-//            $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
-//            $time = date('Y-m-d H:i:s');
-//            $saveImage[] = [
-//                'staff_sn' => $value['staff_sn'],
-//                'staff_name' => $value['staff_name'],
-//                'department_name' => $value['department_name'],
-//                'file_name' => $save_path['file_name'],
-//                'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
-//                'is_clear' => 0,
-//                'created_at' => $time,
-//                'updated_at' => $time
-//            ];
-//        }
-//        $this->billModel->insert(isset($saveImage) ? $saveImage : abort(500, '未发现数据'));
-//        exit;
         $clearInfo = $this->billModel->whereBetween('created_at', [date('Y-m-1'), date('Y-m-t')])->where('is_clear', 1)->get();
         $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
         if ($clear != []) {
@@ -159,7 +137,7 @@ class TotalService
             'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
+            'font_ulr' => public_path() . '/assets/fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高

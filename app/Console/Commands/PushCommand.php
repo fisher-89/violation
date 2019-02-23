@@ -125,6 +125,13 @@ class PushCommand extends Command
         }
     }
 
+    /**
+     * 错误处理
+     *
+     * @param $err
+     * @param $key
+     * @param $file
+     */
     protected function errorDispose($err, $key, $file)
     {
         $this->pushingLogModel->create([
@@ -141,6 +148,13 @@ class PushCommand extends Command
         ]);
     }
 
+    /**
+     * 图片生成
+     *
+     * @param $text
+     * @param string $path
+     * @return mixed
+     */
     protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
@@ -156,7 +170,7 @@ class PushCommand extends Command
             'file_path' => storage_path() . '/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
+            'font_ulr' => public_path() . '/assets/fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高
@@ -256,6 +270,12 @@ class PushCommand extends Command
         return $data;
     }
 
+    /**
+     * 提取需要的数据
+     *
+     * @param $value
+     * @return array
+     */
     protected function text($value)
     {
         $ex = explode('-', $value['department_name']);
@@ -270,6 +290,12 @@ class PushCommand extends Command
         ];
     }
 
+    /**
+     * 提取部门后三级
+     *
+     * @param $arr
+     * @return string
+     */
     protected function takeDepartment($arr)
     {
         $count = count($arr) - 4;

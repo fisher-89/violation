@@ -81,6 +81,13 @@ class BillCommand extends Command
         }
     }
 
+    /**
+     * 生成图片
+     *
+     * @param $text
+     * @param string $path
+     * @return mixed
+     */
     protected function pushImageDispose($text, $path = '')
     {
         $text[] = [];
@@ -96,7 +103,7 @@ class BillCommand extends Command
             'file_path' => storage_path() . '/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
+            'font_ulr' => public_path() . '/assets/fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高
@@ -238,6 +245,9 @@ class BillCommand extends Command
         return implode('-', $array);
     }
 
+    /**
+     * 清除上一期图片，或者7天前的图片
+     */
     protected function imageClear()
     {
         $billArr = $this->billModel->where('is_clear', '0')->whereBetween('created_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),

@@ -111,7 +111,7 @@ class SendImage implements ShouldQueue
             'file_path' => '../storage/app/public/image/' . $path,//图片保存路径
             'title_height' => 35,//报表名称高度
             'title_font_size' => 16,//报表名称字体大小
-            'font_ulr' => 'c:/windows/fonts/msyh.ttc',//字体文件路径
+            'font_ulr' =>  public_path() . '/assets/fonts/msyh.ttc',//字体文件路径
             'header_size' => 12,//表头文字大小
             'text_size' => 10,//正文字体大小
             'row_height' => 40,//每行数据行高
