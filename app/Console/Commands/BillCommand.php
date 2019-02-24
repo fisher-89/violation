@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BillStaff;
 use App\Models\Punish;
 use App\Models\BillImage;
 use App\Models\PushingLog;
@@ -25,6 +26,7 @@ class BillCommand extends Command
     protected $description = 'Command description';
     protected $billModel;
     protected $punishModel;
+    protected $billStaffModel;
     protected $pushingLogModel;
 
     /**
@@ -32,18 +34,19 @@ class BillCommand extends Command
      *
      * @return void
      */
-    public function __construct(Punish $punish, BillImage $billImage, PushingLog $pushingLog)
+    public function __construct(Punish $punish, BillImage $billImage, PushingLog $pushingLog,BillStaff $billStaff)
     {
         parent::__construct();
         $this->punishModel = $punish;
         $this->billModel = $billImage;
+        $this->billStaffModel = $billStaff;
         $this->pushingLogModel = $pushingLog;
     }
 
     /**
      * Execute the console command.
      *
-     * @return mixed  1号生产图片（清除7天以前的图片），1号推送图片，每天推送图片
+     * @return mixed  1号生成图片（清除7天以前的图片），1号推送图片，每天推送图片
      */
     public function handle()
     {
@@ -53,31 +56,37 @@ class BillCommand extends Command
         $arr = is_array($punish) ? [] : $punish->toArray();
         $pushData = [999999];
         if ($arr != []) {
+            $billStaff = [];
             foreach ($arr as $key => $value) {
                 if (in_array($value['staff_sn'], $pushData)) {
                     continue;
                 }
                 $staff = [];
+                $creator = [];
                 foreach ($arr as $k => $val) {
                     if ($val['staff_sn'] == $value['staff_sn']) {
                         $staff[] = $val;
+                        $creator[] = $val['creator_sn'];
                     }
                 }
                 $pushData[] = $value['staff_sn'];
-                $save_path = $this->pushImageDispose($this->text(isset($staff) ? $staff : $value), 'individual/');//生成图片
-                $time = date('Y-m-d H:i:s');
-                $saveImage[] = [
+                $save_path = $this->pushImageDispose($this->text($staff), 'individual/');//生成图片
+                $staff = $this->billModel->create([
                     'staff_sn' => $value['staff_sn'],
                     'staff_name' => $value['staff_name'],
                     'department_name' => $value['department_name'],
                     'file_name' => $save_path['file_name'],
                     'file_path' => config('app.url') . '/storage/image/individual/' . $save_path['file_name'],
                     'is_clear' => 0,
-                    'created_at' => $time,
-                    'updated_at' => $time
-                ];
+                ]);
+                foreach (array_unique($creator) as $item) {
+                    $billStaff[] = [
+                        'bill_id' => $staff->id,
+                        'staff_sn' => $item
+                    ];
+                }
             }
-            $this->billModel->insert($saveImage);
+            $this->billStaffModel->insert($billStaff);
         }
     }
 

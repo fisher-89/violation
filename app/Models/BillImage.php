@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BillImage extends Model
 {
-    use SoftDeletes,ListScopes;
+    use SoftDeletes, ListScopes;
 
     protected $table = 'bill_image';
 
@@ -17,4 +17,9 @@ class BillImage extends Model
     protected $fillable = [
         "staff_sn", "staff_name", "department_name", "file_name", "file_path", "is_clear",
     ];
+
+    public function bill()
+    {
+        return $this->hasMany(BillStaff::class, 'bill_id', 'id');
+    }
 }

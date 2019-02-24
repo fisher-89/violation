@@ -93,7 +93,7 @@ class TotalService
      * 数据监测被删除旧重新生成
      *
      * @param $request
-     * @return mixed
+     * @return mixed  own
      */
     public function billImage($request)
     {
@@ -102,8 +102,8 @@ class TotalService
         if ($clear != []) {
             foreach ($clear as $key => $value) {
                 $punish = $this->punishModel->whereBetween('billing_at', [date('Y-m-01 00:00:00', strtotime('-1 month')),
-                    date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])->where('staff_sn', $value['staff_sn'])
-                    ->with('rules')->get();
+                    date("Y-m-d 23:59:59", strtotime(-date('d') . 'day'))])
+                    ->where(['staff_sn' => $value['staff_sn'], 'has_paid' => 0])->with('rules')->get();
                 $arr = is_array($punish) ? $punish : $punish->toArray();
                 $savePath = $this->pushImageDispose($this->text($arr), 'individual/');//生成图片
                 $this->billModel->where('id', $value['id'])->update([
@@ -113,7 +113,14 @@ class TotalService
                 ]);
             }
         }
-        return $this->billModel->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        $staffSn = $request->user()->staff_sn;
+        return $this->billModel->when($request->overdued == true, function ($query) {
+            $query->where('is_clear', 0);
+        })->when($request->own == true, function ($query) use ($staffSn) {
+            $query->with(['bill' => function ($q) use ($staffSn) {
+                $q->where(['staff_sn' => $staffSn]);
+            }]);
+        })->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
@@ -277,27 +284,5 @@ class TotalService
             $sum++;
         }
         return implode('-', $array);
-    }
-
-    public function insertData()
-    {
-        set_time_limit(100);
-        for ($sum = 110001; $sum < 110201; $sum++) {
-            $staff = app('api')->withRealException()->getStaff($sum);
-            if ($staff == false) {
-                continue;
-            }
-            $arr[] = [
-                'rule_id' => 1, 'point_log_id' => null, 'staff_sn' => $staff['staff_sn'],
-                'staff_name' => $staff['realname'], 'brand_id' => $staff['brand_id'], 'brand_name' => $staff['brand']['name'],
-                'department_id' => $staff['department_id'], 'department_name' => $staff['department']['full_name'],
-                'position_id' => $staff['position_id'], 'position_name' => $staff['position']['name'],
-                'shop_sn' => $staff['shop_sn'], 'billing_sn' => 110104, 'billing_name' => '刘勇01',
-                'billing_at' => '2018-12-30', 'quantity' => 4, 'money' => 20, 'score' => 20,
-                'violate_at' => '2018-12-29', 'has_paid' => 0, 'paid_at' => null, 'sync_point' => null,
-                'month' => 201812, 'remark' => null, 'creator_sn' => 119462, 'creator_name' => '唐骄'
-            ];
-        }
-        $this->punishModel->insert(isset($arr) ? $arr : abort(500, '未发现数据'));
     }
 }
