@@ -278,7 +278,7 @@ class ImageController extends Controller
 
     public function myPushingLog(Request $request)
     {
-        return $this->pushingModel->where('sender_staff_sn', $request->user()->staff_sn)->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->pushingLogModel->where('sender_staff_sn', $request->user()->staff_sn)->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
