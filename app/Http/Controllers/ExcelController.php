@@ -201,7 +201,7 @@ class ExcelController extends Controller
         foreach ($pushingArray as $value) {
             $id = $this->pushingModel->where(['flock_name' => $value, 'staff_sn' => Auth::user()->staff_sn])->value('id');
             if ($id == false) {
-                $this->error['推送群'][] = $value . '没找到';
+                $this->error['推送群'][] = '"'.$value . '"-未找到';
             }
             $array[] = $id;
         }
