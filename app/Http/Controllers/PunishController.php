@@ -69,7 +69,7 @@ class PunishController extends Controller
      * @param Request $request
      */
     public function editPunish(Request $request)
-    {
+    {dd($request->all());
         $this->authority($request->user()->authorities['oa'], 204);
         $staff = (bool)$request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : null;
         $billing = (bool)$request->billing_sn == true ? app('api')->withRealException()->getStaff($request->billing_sn) : null;
