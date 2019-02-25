@@ -123,11 +123,9 @@ class RuleController extends Controller
             'name' => ['required', 'max:20', $id === null ? 'unique:rules,name' : Rule::unique('rules', 'name')->whereNotIn('id', explode(' ', $id))],
             'description' => 'max:300',
             'money' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
-                if ($value != 'CustomSettings') {
-                    $base = preg_match_all('/(\d+)/', $value);
-                    if ($base == false) {
-                        return $event('缺少基础数值');
-                    }
+                $base = preg_match_all('/(\d+)/', $value);
+                if ($base == false) {
+                    return $event('缺少基础数值');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $key => $value) {
@@ -142,14 +140,25 @@ class RuleController extends Controller
                         return $event('找到非系统运算符:' . $operator[1][$k]);
                     }
                 }
-            }],
-            'money_custom_settings'=>'boolean|required|max:1',
-            'score' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
-                if ($value != 'CustomSettings') {
-                    $subtraction = preg_match_all('/(\d+)/', $value);
-                    if ($subtraction == false) {
-                        return $event('缺少基础数值');
+            }, function ($attribute, $value, $event) use ($variable, $calculation) {
+                $string = preg_replace('/(\d+)/', ',', preg_replace('/{<(\w+)>}/', ',', preg_replace('/{{(\w+)}}/', ',', $value)));
+                $items = [];
+                foreach (explode(',', $string) as $item) {
+                    if (!$item) {
+                        unset($item);
+                        continue;
                     }
+                    $items[] = $item;
+                }
+                if (count($items) != 0) {
+                    return $event('找到非系统字符串' . implode(',', $items));
+                }
+            }],
+            'money_custom_settings' => 'boolean|required|max:1',
+            'score' => ['required', function ($attribute, $value, $event) use ($variable, $calculation) {
+                $subtraction = preg_match_all('/(\d+)/', $value);
+                if ($subtraction == false) {
+                    return $event('缺少基础数值');
                 }
                 preg_match_all('/{{(\w+)}}/', $value, $func);
                 foreach ($func[1] as $i => $item) {
@@ -164,15 +173,30 @@ class RuleController extends Controller
                         return $event('找到非系统运算符:' . $operator[1][$k]);
                     }
                 }
+            }, function ($attribute, $value, $event) use ($variable, $calculation) {
+                $string = preg_replace('/(\d+)/', ',', preg_replace('/{<(\w+)>}/', ',', preg_replace('/{{(\w+)}}/', ',', $value)));
+                $items = [];
+                foreach (explode(',', $string) as $item) {
+                    if (!$item) {
+                        unset($item);
+                        continue;
+                    }
+                    $items[] = $item;
+                }
+                if (count($items) != 0) {
+                    return $event('找到非系统字符串' . implode(',', $items));
+                }
             }],
-            'score_custom_settings'=>'boolean|required|max:1',
+            'score_custom_settings' => 'boolean|required|max:1',
             'sort' => 'numeric|max:32767',
         ], [], [
             'type_id' => '分类ID',
             'name' => '名称',
             'description' => '描述',
             'money' => '扣钱公式',
+            'money_custom_settings' => '大爱金额自定义',
             'score' => '扣分公式',
+            'score_custom_settings' => '扣分自定义',
             'sort' => '排序',
         ]);
     }
