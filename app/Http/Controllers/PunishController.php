@@ -69,7 +69,7 @@ class PunishController extends Controller
      * @param Request $request
      */
     public function editPunish(Request $request)
-    {dd($request->all());
+    {
         $this->authority($request->user()->authorities['oa'], 204);
         $staff = (bool)$request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : null;
         $billing = (bool)$request->billing_sn == true ? app('api')->withRealException()->getStaff($request->billing_sn) : null;
@@ -113,7 +113,7 @@ class PunishController extends Controller
                 }],//制度表I
                 'pushing' => ['required', 'array', function ($attribute, $value, $event) use ($id) {
                     if ($id == true) {
-                        $hasObj = $this->punishHasAuthModel->whereIn('punish_id', $id)->get();
+                        $hasObj = $this->punishHasAuthModel->where('punish_id', $id)->get();
                         $hasArray = empty($hasObj) ? [] : array_column($hasObj->toArray(), 'auth_id');
                         $boole = date('Y-m-d H:i:s') > date('Y-m-d 20:i:s') ?
                             (array_diff_assoc($value, $hasArray) != [] ? true : false) : false;
