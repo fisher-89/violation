@@ -69,9 +69,13 @@ class PushCommand extends Command
                     try {
                         $fileData = $this->pushImageDispose($val, 'individual/');
                         $pushImage = app('api')->withRealException()->taskPushingDingImage($fileData['save_path']);
+                        if(!isset($pushImage['media_id'])){
+                            $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']);
+                            continue;
+                        }
                         $dataInfo = app('api')->withRealException()->taskPushingDing([
                             'chatid' => $key,
-                            'data' => isset($pushImage['media_id']) ? $pushImage['media_id'] : $this->errorDispose($pushImage['errmsg'], $key, $fileData['file_name']),
+                            'data' => $pushImage['media_id'],
                         ]);
                     } catch (\Exception $exception) {
                         $this->pushingLogModel->create([
