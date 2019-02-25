@@ -108,7 +108,7 @@ class RuleController extends Controller
 
     /**
      * 添加验证
-     * 运算规则组成：运算符:{< d+ >}+系统函数{{w+}} 例如：次数(自动求当前员工在此条记录的次数)+数字  {!20!}:基数
+     *
      * @param $request
      */
     protected function verify($request)
@@ -151,7 +151,7 @@ class RuleController extends Controller
                     $items[] = $item;
                 }
                 if (count($items) != 0) {
-                    return $event('找到非系统字符串' . implode(',', $items));
+                    return $event('找到非系统字符串:' . implode(',', $items));
                 }
             }],
             'money_custom_settings' => 'boolean|required|max:1',
@@ -184,7 +184,7 @@ class RuleController extends Controller
                     $items[] = $item;
                 }
                 if (count($items) != 0) {
-                    return $event('找到非系统字符串' . implode(',', $items));
+                    return $event('找到非系统字符串:' . implode(',', $items));
                 }
             }],
             'score_custom_settings' => 'boolean|required|max:1',
