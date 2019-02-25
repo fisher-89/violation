@@ -93,7 +93,7 @@ class PushCommand extends Command
                         continue;
                     }
                     $date = date('Y-m-d H:i:s');
-                    $array[] = [
+                    $arraySql[] = [
                         'sender_staff_sn' => null,
                         'sender_staff_name' => '定时20:00推送',
                         'ding_flock_sn' => $key,
@@ -107,10 +107,9 @@ class PushCommand extends Command
                         'created_at' => $date,
                         'updated_at' => $date,
                     ];
-
                 }
             }
-            if (isset($array)) $this->pushingLogModel->insert($array);
+            if (isset($arraySql)) $this->pushingLogModel->insert($arraySql);
         } else {
             $this->pushingLogModel->create([
                 'sender_staff_sn' => null,
