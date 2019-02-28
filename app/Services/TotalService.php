@@ -129,9 +129,9 @@ class TotalService
             }
         }
         $staffSn = $request->user()->staff_sn;
-        return $this->billModel->when($request->overdued == true, function ($query) {
+        return $this->billModel->when($request->overdued == 1, function ($query) {
             $query->where('is_clear', 0);
-        })->when($request->own == true, function ($query) use ($staffSn) {
+        })->when($request->own == 1, function ($query) use ($staffSn) {
             $query->with(['bill' => function ($q) use ($staffSn) {
                 $q->where(['staff_sn' => $staffSn]);
             }]);
