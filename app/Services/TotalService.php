@@ -111,7 +111,7 @@ class TotalService
      * @return mixed  own
      */
     public function billImage($request)
-    {
+    {dd([$request->overdued ,$request->own]);
         $clearInfo = $this->billModel->whereBetween('created_at', [date('Y-m-1'), date('Y-m-t')])->where('is_clear', 1)->get();
         $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
         if ($clear != []) {
