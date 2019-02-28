@@ -27,12 +27,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->call(function(){
-            DB::table('bill_staff')->insert(['bill_id'=>4,'staff_sn'=>110103]);
-        })->everyMinute();
-        $schedule->command('punish:billCommand')->monthlyOn(1, '2:30');//月推送
+        $schedule->command('command:billCommand')->monthlyOn(1, '2:30');//月推送
 //        $schedule->command('punish:pushCommand')->dailyAt('21:00');//日推送
-        $schedule->command('punish:pushCommand')->everyMinute();
+        $schedule->command('command:pushCommand')->everyMinute();
     }
 
     /**
