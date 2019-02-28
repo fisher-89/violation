@@ -60,6 +60,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
     $admin->get('count-staff-excel',Controllers\ExcelController::class . '@staffExcel');//点进去内人员详细导出
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');//单个人支付
     $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');//获取统计页面数据
+    $admin->get('show-department',Controllers\TotalController::class . '@show');
     $admin->post('bill-image', Controllers\TotalController::class . '@billImage');//生成图片页面
     $admin->get('ding-group',Controllers\ExcelController::class . '@getDingGroup');//获取所有群组  增加推送权限用
 

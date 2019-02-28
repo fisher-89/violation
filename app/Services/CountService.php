@@ -43,6 +43,7 @@ class CountService
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
         $info['states'] = $equation->$str == '1' ? 1 : 0;
+        $info['number'] = $this->countRuleNum($arr);
         $variable = $this->variableModel->get();
         $systemArray = explode(',', $equation->$type);
         $repeatedly = $this->operator($signs, implode($systemArray));

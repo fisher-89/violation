@@ -30,6 +30,10 @@ class TotalController extends Controller
         return $this->totalService->getStaff($request);
     }
 
+    public function show(Request $request)
+    {
+        return $this->totalService->showData($request);
+    }
     /**
      * 单个人支付状态改变
      *

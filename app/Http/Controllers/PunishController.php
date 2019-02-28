@@ -106,16 +106,12 @@ class PunishController extends Controller
         $quantity = isset($punish->quantity) ? $punish->quantity : '';
         $this->validate($request,
             [
-                'rule_id' => ['required', 'numeric', 'exists:rules,id', function ($attribute, $value, $event) use ($id, $punish) {
-                    if ($id == true && $value != $punish->rule_id) {
-                        return $event('被大爱原因不能被修改');
-                    }
-                }],//制度表I
+                'rule_id' => ['required', 'numeric', 'exists:rules,id'],//制度表I
                 'pushing' => ['required', 'array', function ($attribute, $value, $event) use ($id) {
                     if ($id == true) {
                         $hasObj = $this->punishHasAuthModel->where('punish_id', $id)->get();
                         $hasArray = empty($hasObj) ? [] : array_column($hasObj->toArray(), 'auth_id');
-                        $boole = date('Y-m-d H:i:s') > date('Y-m-d 20:i:s') ?
+                        $boole = date('Y-m-d H:i:s') > date('Y-m-d 21:i:s') ?
                             (array_diff_assoc($value, $hasArray) != [] ? true : false) : false;
                         if ($boole) {
                             return $event('不能修改已过推送时间的群组');

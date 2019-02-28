@@ -242,7 +242,8 @@ class PunishService
         $data['staffSn'] = $request->staff_sn;
         $data['ruleId'] = $request->rule_id;
         $data['violateAt'] = $request->violate_at;
-        $howNumber = $this->countData($data);
+        $countString = $this->countData($data);
+        $howNumber = $request->quantity != $countString ? ($request->quantity != false ?$request->quantity : $countString) : $countString;
         $id = $request->route('id');
         $punish = $this->punishModel->find($id);
         if ($punish == null) {
