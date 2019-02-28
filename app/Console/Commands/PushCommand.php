@@ -47,8 +47,8 @@ class PushCommand extends Command
      */
     public function handle()
     {
-        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 20:00:00', strtotime('-1 day')),
-            date('Y-m-d 19:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
+        $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 21:00:00', strtotime('-1 day')),
+            date('Y-m-d 20:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
         $arr = is_array($punish) ? [] : $punish->toArray();
         if ($arr != []) {
             $flock = [];
@@ -80,7 +80,7 @@ class PushCommand extends Command
                     } catch (\Exception $exception) {
                         $this->pushingLogModel->create([
                             'sender_staff_sn' => null,
-                            'sender_staff_name' => '定时20:00推送',
+                            'sender_staff_name' => '定时21:00推送',
                             'ding_flock_sn' => isset($key) && $key != false ? $key : null,
                             'ding_flock_name' => isset($key) && $key != false ? DB::table('ding_group')->where('group_sn', $key)->value('group_name') : '无法推送',
                             'staff_sn' => null,
@@ -95,7 +95,7 @@ class PushCommand extends Command
                     $date = date('Y-m-d H:i:s');
                     $arraySql[] = [
                         'sender_staff_sn' => null,
-                        'sender_staff_name' => '定时20:00推送',
+                        'sender_staff_name' => '定时21:00推送',
                         'ding_flock_sn' => $key,
                         'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
                         'staff_sn' => null,
@@ -113,7 +113,7 @@ class PushCommand extends Command
         } else {
             $this->pushingLogModel->create([
                 'sender_staff_sn' => null,
-                'sender_staff_name' => '定时20:00推送',
+                'sender_staff_name' => '定时21:00推送',
                 'ding_flock_sn' => null,
                 'ding_flock_name' => '无法推送',
                 'staff_sn' => null,
@@ -137,7 +137,7 @@ class PushCommand extends Command
     {
         $this->pushingLogModel->create([
             'sender_staff_sn' => null,
-            'sender_staff_name' => '定时20:00推送',
+            'sender_staff_name' => '定时21:00推送',
             'ding_flock_sn' => $key,
             'ding_flock_name' => DB::table('ding_group')->where('group_sn', $key)->value('group_name'),
             'staff_sn' => null,
@@ -259,7 +259,7 @@ class PushCommand extends Command
         //居中写入标题
         imagettftext($img, $base['title_font_size'], 0, ($base['img_width'] - $title_fout_width) / 2, $base['title_height'] + 10, $text_color, $base['font_ulr'], $params['title']);
         //写入制表时间
-        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'] . '   说明：当前生成为昨天20:00-今天19:59被大爱且未付款人员');
+        imagettftext($img, 8, 0, $base['border'] + 20, $base['img_height'] - 15, $text_color, $base['font_ulr'], '生成时间：' . $params['table_time'] . '   说明：当前生成为昨天21:00-今天20:59被大爱且未付款人员');
         $save_path = $base['file_path'] . $params['file_name'];
         if (!is_dir($base['file_path']))//判断存储路径是否存在，不存在则创建
         {
