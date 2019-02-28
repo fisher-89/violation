@@ -15,7 +15,6 @@ class DingGroupSeeder extends Seeder
         $data = [
             ['group_sn' => 'chat101cdac2d752644351943d26373bb2b6', 'group_name' => '万达重要通知群', 'created_at' => $date, 'updated_at' => $date],
             ['group_sn' => 'chat9a711fbc32e856aaf8d14e773bcf8887', 'group_name' => 'IT部开发组群', 'created_at' => $date, 'updated_at' => $date],
-            ['group_sn' => 'chat9a711fbc32e856aaf8d14e773bcf8887', 'group_name' => 'IT部开发组群', 'created_at' => $date, 'updated_at' => $date],
             ['group_sn' => 'chata6a7f6351fa8b912b8ad476648aefaec', 'group_name' => 'IT部群', 'created_at' => $date, 'updated_at' => $date],
             ['group_sn' => 'chate89f53c423397ee47b82ebb8d6ada631', 'group_name' => '行动日志群', 'created_at' => $date, 'updated_at' => $date],
             ['group_sn' => 'chat815b1fec786639adcf313b906e6383c6', 'group_name' => '后勤行程考勤群', 'created_at' => $date, 'updated_at' => $date],
