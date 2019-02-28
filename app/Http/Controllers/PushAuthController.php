@@ -57,7 +57,7 @@ class PushAuthController extends Controller
             'flock_sn' => ['required', 'max:50', function ($attribute, $value, $event) use ($request) {
                 $push = DB::table('pushing_authority')->where(['staff_sn' => $request->staff_sn, 'flock_sn' => $value])->first();
                 if ($push == true) {
-                    return $event('人员存在重复，重复名称为:' . $push['flock_name']);
+                    return $event('人员存在重复，重复名称为:' . $push->flock_name);
                 }
             }],//防止重复，并返回重复的群名
             'flock_name' => 'required|max:20',
