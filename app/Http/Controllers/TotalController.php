@@ -43,7 +43,7 @@ class TotalController extends Controller
     public function payStatus(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 203);
-        return $this->totalService->updateMoneyStatus($request->all());
+        return $this->totalService->updateMoneyStatus($request);
     }
 
     public function billImage(Request $request)

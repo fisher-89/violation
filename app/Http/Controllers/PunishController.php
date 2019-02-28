@@ -103,7 +103,7 @@ class PunishController extends Controller
         $data['violateAt'] = $request->violate_at;
         $data['ruleId'] = $request->rule_id;
         $punish = DB::table('punish')->where('id', $id)->first();
-        $quantity = isset($punish->quantity) ? $punish->quantity : '';
+        $quantity = isset($request->quantity) ? $request->quantity : DB::table('punish')->where('rule_id', $request->rule_id)->count() + 1;
         $this->validate($request,
             [
                 'rule_id' => ['required', 'numeric', 'exists:rules,id'],//制度表I
@@ -204,7 +204,7 @@ class PunishController extends Controller
     public function listPaymentMoney(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 203);
-        return $this->punishService->listPaymentUpdate($request->all());
+        return $this->punishService->listPaymentUpdate($request);
     }
 
     /**

@@ -65,6 +65,7 @@ class CreatePunishTable extends Migration
             $table->date('violate_at')->comment('违纪时间');
             $table->unsignedTinyInteger('has_paid')->comment('是否付款:0.未付款 1.已付款')->default(0);
             $table->unsignedMediumInteger('action_staff_sn')->comment('操作付款状态人员编号')->nullable();
+            $table->unsignedTinyInteger('paid_type')->comment('1.支付宝 2.微信 3工资')->nullable();
             $table->dateTime('paid_at')->comment('付款时间')->nullable();
             $table->unsignedTinyInteger('sync_point')->comment('是否同步积分制  1:同步')->nullable();
             $table->char('month', 6)->comment('月辅助查询，格式：201804');
@@ -94,9 +95,9 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
-            $table->unsignedSmallInteger('alipay')->comment('支付宝支付');
-            $table->unsignedSmallInteger('wechat')->comment('微信支付');
-            $table->unsignedSmallInteger('salary')->comment('工资扣除');
+            $table->unsignedSmallInteger('alipay')->comment('支付宝支付')->nullable();
+            $table->unsignedSmallInteger('wechat')->comment('微信支付')->nullable();
+            $table->unsignedSmallInteger('salary')->comment('工资扣除')->nullable();
             $table->unsignedTinyInteger('has_settle')->comment('是否结清')->default(0);
             $table->timestamps();
             $table->softDeletes();

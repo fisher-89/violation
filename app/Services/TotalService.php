@@ -48,13 +48,14 @@ class TotalService
 
     public function showData($request)
     {
-        $countData = $this->countStaffModel->where('month',$request->month)->get();
+        $countData = $this->countStaffModel->where('month', $request->month)->get();
         $id = [];
-        foreach ($countData as $value){
+        foreach ($countData as $value) {
             $id[] = $value['department_id'];
         }
         return array_unique($id);
     }
+
     /**
      * 递归提取所有部门id
      *
@@ -81,19 +82,21 @@ class TotalService
      * @param $array
      * @return array
      */
-    public function updateMoneyStatus($array)
+    public function updateMoneyStatus($request)
     {
         $data = [];
+        $all = $request->all();
+        $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
         try {
             DB::beginTransaction();
-            foreach ($array as $k => $v) {
+            foreach ($all['id'] as $k => $v) {
                 $countStaff = $this->countStaffModel->find($v);
                 if ($countStaff->has_settle == 1) {
                     continue;
                 }
-                $countStaff->update(['paid_money' => $countStaff->money, 'has_settle' => 1]);
+                $countStaff->update(['paid_money' => $countStaff->money, $key => $countStaff->money - $countStaff->paid_money, 'has_settle' => 1]);
                 $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update([
-                    'has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
+                    'has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
                 $data[] = $this->countStaffModel->where('id', $v)->with(['countHasPunish.punish'])->first();
             }
             DB::commit();

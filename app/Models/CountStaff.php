@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CountStaff extends Model
 {
-    use ListScopes,SoftDeletes;
+    use ListScopes, SoftDeletes;
 
     protected $table = 'count_staff';
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['department_id','brand_name', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money', 'score', 'has_settle'];
+    protected $fillable = ['department_id', 'brand_name', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money',
+        'score', 'alipay', 'wechat', 'salary', 'has_settle'];
 
     public function countHasPunish()
     {

@@ -243,7 +243,7 @@ class PunishService
         $data['ruleId'] = $request->rule_id;
         $data['violateAt'] = $request->violate_at;
         $countString = $this->countData($data);
-        $howNumber = $request->quantity != $countString ? ($request->quantity != false ?$request->quantity : $countString) : $countString;
+        $howNumber = $request->quantity != $countString ? ($request->quantity != false ? $request->quantity : $countString) : $countString;
         $id = $request->route('id');
         $punish = $this->punishModel->find($id);
         if ($punish == null) {
@@ -262,7 +262,7 @@ class PunishService
         }
         try {
             DB::beginTransaction();
-            $this->punishHasAuthModel->where('punish_id',$id)->delete();
+            $this->punishHasAuthModel->where('punish_id', $id)->delete();
             $hasArray = [];
             foreach ($request->pushing as $hasItem) {
                 $hasArray[] = [
@@ -340,21 +340,24 @@ class PunishService
      * @param $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
-    public function listPaymentUpdate($arr)
+    public function listPaymentUpdate($request)
     {
         $data = [];
         try {
             DB::beginTransaction();
-            foreach ($arr as $item) {
+            $all = $request->all();
+            foreach ($all['id'] as $item) {
                 $punish = $this->punishModel->with('rules.ruleTypes')->find($item);
                 if ($punish->has_paid == 1) {
                     continue;
                 }
-                $punish->update(['has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
+                $punish->update(['has_paid' => 1, 'paid_type' => $all['paid_type'] == 1 ? 1 : $all['paid_type'] == 2 ? 2 : 3, 'action_staff_sn' => $request->user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
+                $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid'] == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
-                    'paid_money' => $countStaff->paid_money + $punish->money,
-                    'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
+                    'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid'] : $countStaff->paid_money + $punish->money,
+                    $paid => $paid == 'salary' ? ($countStaff->$paid == false ? $all['paid'] : $all['paid'] + $countStaff->$paid) : ($countStaff->$paid == false ? $punish->money : $punish->money + $countStaff->$paid),
+                    'has_settle' => $paid == 'salary' ? ($countStaff->paid_money + $all['paid'] >= $countStaff->money ? 1 : 0) : ($countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0)
                 ]);
                 $data[] = $punish;
             }
@@ -392,16 +395,21 @@ class PunishService
             DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
             if ($punish->has_paid == 1) {
-                $punish->update(['has_paid' => 0, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => NULL]);
+                $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
+                $punish->update(['has_paid' => 0, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => null, 'paid_at' => NULL]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
+                    $key => $countStaff->$key - $punish->money,
                     'has_settle' => 0
                 ]);
 
             } else {
-                $punish->update(['has_paid' => 1, 'action_staff_sn' => Auth::user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
+                $all = $request->all();
+                $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
+                $punish->update(['has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
+                    $key => $countStaff->$key + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
             }
