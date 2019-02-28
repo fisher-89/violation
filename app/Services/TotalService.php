@@ -111,7 +111,8 @@ class TotalService
      * @return mixed  own
      */
     public function billImage($request)
-    {dd($request->all());
+    {
+        $all = $request->all();
         $clearInfo = $this->billModel->whereBetween('created_at', [date('Y-m-1'), date('Y-m-t')])->where('is_clear', 1)->get();
         $clear = is_array($clearInfo) ? $clearInfo : $clearInfo->toArray();
         if ($clear != []) {
@@ -129,9 +130,9 @@ class TotalService
             }
         }
         $staffSn = $request->user()->staff_sn;
-        return $this->billModel->when($request->overdued == 1, function ($query) {
+        return $this->billModel->when($all['overdued'] == 1, function ($query) {
             $query->where('is_clear', 0);
-        })->when($request->own == 1, function ($query) use ($staffSn) {
+        })->when($all['own'] == 1, function ($query) use ($staffSn) {
             $query->with(['bill' => function ($q) use ($staffSn) {
                 $q->where(['staff_sn' => $staffSn]);
             }]);
