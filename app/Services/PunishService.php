@@ -346,20 +346,24 @@ class PunishService
         try {
             DB::beginTransaction();
             $all = $request->all();
+            if (empty($all['paid_type'])) abort(404, '未找到支付类型');
             foreach ($all['id'] as $item) {
                 $punish = $this->punishModel->with('rules.ruleTypes')->find($item);
-                if ($punish->has_paid == 1) {
-                    continue;
-                }
-                $punish->update(['has_paid' => 1, 'paid_type' => $all['paid_type'] == 1 ? 1 : $all['paid_type'] == 2 ? 2 : 3, 'action_staff_sn' => $request->user()->staff_sn, 'paid_at' => date('Y-m-d H:i:s')]);
+                $data[] = $punish;
+                if ($punish->has_paid == 1) continue;
+                $punish->update([
+                    'has_paid' => 1,
+                    'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'],
+                    'action_staff_sn' => $request->user()->staff_sn,
+                    'paid_at' => date('Y-m-d H:i:s')
+                ]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
                 $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid'] == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
-                    'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid'] : $countStaff->paid_money + $punish->money,
-                    $paid => $paid == 'salary' ? ($countStaff->$paid == false ? $all['paid'] : $all['paid'] + $countStaff->$paid) : ($countStaff->$paid == false ? $punish->money : $punish->money + $countStaff->$paid),
-                    'has_settle' => $paid == 'salary' ? ($countStaff->paid_money + $all['paid'] >= $countStaff->money ? 1 : 0) : ($countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0)
+                    'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid_type'] : $countStaff->paid_money + $punish->money,
+                    $paid => $paid == 'salary' ? $all['paid_type'] + $countStaff->$paid : $punish->money + $countStaff->$paid,
+                    'has_settle' => $paid == 'salary' ? ($countStaff->paid_money + $all['paid_type'] >= $countStaff->money ? 1 : 0) : ($countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0)
                 ]);
-                $data[] = $punish;
             }
             DB::commit();
         } catch (\Exception $exception) {
@@ -388,9 +392,7 @@ class PunishService
     public function detailedPagePayment($request)
     {
         $punish = $this->punishModel->with('rules.ruleTypes')->find($request->route('id'));
-        if ((bool)$punish == false) {
-            abort(404, '未找到数据');
-        }
+        if ((bool)$punish == false) abort(404, '未找到数据');
         try {
             DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => $punish->month])->first();
@@ -399,17 +401,17 @@ class PunishService
                 $punish->update(['has_paid' => 0, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => null, 'paid_at' => NULL]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
-                    $key => $countStaff->$key - $punish->money,
+                    $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
                     'has_settle' => 0
                 ]);
-
             } else {
                 $all = $request->all();
+                if (empty($all['paid_type'])) abort(404, '未找到付款类型');
                 $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
-                $punish->update(['has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
+                $punish->update(['has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
-                    $key => $countStaff->$key + $punish->money,
+                    $key => $punish->paid_type > 2 ? $countStaff->$key + $punish->paid_type : $countStaff->$key + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
             }

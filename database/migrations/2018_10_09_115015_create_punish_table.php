@@ -95,9 +95,9 @@ class CreatePunishTable extends Migration
             $table->unsignedSmallInteger('paid_money')->comment('已付金额')->nullable();
             $table->unsignedSmallInteger('money')->comment('金额');
             $table->unsignedSmallInteger('score')->comment('分值');
-            $table->unsignedSmallInteger('alipay')->comment('支付宝支付')->nullable();
-            $table->unsignedSmallInteger('wechat')->comment('微信支付')->nullable();
-            $table->unsignedSmallInteger('salary')->comment('工资扣除')->nullable();
+            $table->unsignedSmallInteger('alipay')->comment('支付宝支付')->default(0);
+            $table->unsignedSmallInteger('wechat')->comment('微信支付')->default(0);
+            $table->unsignedSmallInteger('salary')->comment('工资扣除')->default(0);
             $table->unsignedTinyInteger('has_settle')->comment('是否结清')->default(0);
             $table->timestamps();
             $table->softDeletes();

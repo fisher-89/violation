@@ -86,18 +86,23 @@ class TotalService
     {
         $data = [];
         $all = $request->all();
+        if (empty($all['paid_type'])) abort(404, '未找到支付类型');
         $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
         try {
             DB::beginTransaction();
             foreach ($all['id'] as $k => $v) {
-                $countStaff = $this->countStaffModel->find($v);
-                if ($countStaff->has_settle == 1) {
-                    continue;
-                }
-                $countStaff->update(['paid_money' => $countStaff->money, $key => $countStaff->money - $countStaff->paid_money, 'has_settle' => 1]);
+                $countStaff = $this->countStaffModel->with(['countHasPunish.punish'])->find($v);
+                $data[] = $countStaff;
+                if ($countStaff->has_settle == 1) continue;
+                $countStaff->update([
+                    'paid_money' => $key == 'salary' ? $all['paid'] + $countStaff->paid_money : $countStaff->money,//如果先用工资扣款，再用微信数据无法验证准确性
+                    $key => $countStaff->money - $countStaff->paid_money,
+                    'has_settle' => 1]);
                 $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update([
-                    'has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
-                $data[] = $this->countStaffModel->where('id', $v)->with(['countHasPunish.punish'])->first();
+                    'has_paid' => 1,
+                    'action_staff_sn' => $request->user()->staff_sn,
+                    'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'],
+                    'paid_at' => date('Y-m-d H:i:s')]);
             }
             DB::commit();
         } catch (\Exception $exception) {
