@@ -109,7 +109,7 @@ class PunishService
      * @param $id
      * @return array
      */
-    protected function regroupPointSql($rule, $request, $oa, $id)
+    public function regroupPointSql($rule, $request, $oa, $id)
     {
         return [
             'title' => isset($rule->name) ? $rule->name : abort(500, '未找到标题'),
@@ -170,6 +170,7 @@ class PunishService
             'has_paid' => $request->has_paid == 1 ? 1 : 0,
             'action_staff_sn' => $request->has_paid == 1 ? $request->user()->staff_sn : null,
             'paid_at' => $paidDate,
+            'area' => $request->area,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'month' => isset($request->billing_at) ? substr($request->billing_at, 0, 4) . substr($request->billing_at, 5, 2) : date('Ym'),
             'remark' => isset($request->remark) ? $request->remark : null,
@@ -495,5 +496,51 @@ class PunishService
     protected function deletePoint($id)
     {
         return app('api')->withRealException()->deletePoints($id);
+    }
+
+    public function storePunishData($request, $object, $staff, $billing)
+    {
+        $all = $request->all();
+        $batchSql = [
+            'rule_id' => isset($object->rule_id) ? $object->rule_id : abort(500, '未找到制度id'),
+            'staff_sn' => isset($object->staff_sn) ? $object->staff_sn : abort(500, '未找到员工编号'),
+            'staff_name' => isset($staff['realname']) ? $staff['realname'] : abort(500, '未找到员工姓名'),
+            'brand_id' => isset($staff['brand_id']) ? $staff['brand_id'] : abort(500, '未找到品牌id'),
+            'brand_name' => isset($staff['brand']['name']) ? $staff['brand']['name'] : abort(500, '未找到品牌名称'),
+            'department_id' => isset($staff['department_id']) ? $staff['department_id'] : abort(500, '未找到部门id'),
+            'department_name' => isset($staff['department']['full_name']) ? $staff['department']['full_name'] : abort(500, '未找到部门名称'),
+            'position_id' => isset($staff['position_id']) ? $staff['position_id'] : abort(500, '未找到职位id'),
+            'position_name' => isset($staff['position']['name']) ? $staff['position']['name'] : abort(500, '未找到职位名称'),
+            'shop_sn' => isset($staff['shop_sn']) ? $staff['shop_sn'] : null,
+            'quantity' => isset($object->quantity) ? $object->quantity : abort(500, '当前次数为找到'),
+            'money' => isset($object->money) ? $object->money : abort(500, '罚款金额未找到'),
+            'score' => isset($object->score) ? $object->score : abort(500, '扣分分值未找到'),
+            'billing_sn' => isset($billing['staff_sn']) ? $billing['staff_sn'] : null,
+            'billing_name' => isset($billing['realname']) ? $billing['realname'] : null,
+            'billing_at' => isset($object->billing_at) ? $object->billing_at : abort(500, '未找到开单日期'),
+            'violate_at' => isset($object->violate_at) ? $object->violate_at : abort(500, '违纪日期'),
+            'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
+            'area' => $all['area'],
+            'month' => date('Ym'),
+            'remark' => isset($value['remark']) ? $object->remark : null,
+            'creator_sn' => $request->user()->staff_sn,
+            'creator_name' => $request->user()->realname,
+        ];
+        $punish = $this->punishModel->create($batchSql);
+        $rule = $this->ruleModel->find($object->rule_id);
+        $pushSql = [];
+        foreach ($all['pushing'] as $item) {
+            $pushSql[] = [
+                'punish_id' => $punish->id,
+                'auth_id' => $item
+            ];
+        }
+        $this->punishHasAuthModel->insert($pushSql);
+        if (substr($object->billing_at, 0, 7) != date('Y-m')) {
+            $this->eliminateUltimoBill($punish);
+        }
+        $this->updateCountData($object, $punish, 1);
+        return $this->regroupPointSql($rule, $object, $staff, $punish->id);
+        //推送和统计表加数据
     }
 }

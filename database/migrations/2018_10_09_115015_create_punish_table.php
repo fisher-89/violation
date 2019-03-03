@@ -69,6 +69,7 @@ class CreatePunishTable extends Migration
             $table->dateTime('paid_at')->comment('付款时间')->nullable();
             $table->unsignedTinyInteger('sync_point')->comment('是否同步积分制  1:同步')->nullable();
             $table->char('month', 6)->comment('月辅助查询，格式：201804');
+            $table->unsignedTinyInteger('area')->comment('地区,1成都，2濮院，3市场');
             $table->text('remark')->comment('备注')->nullable();
             $table->char('creator_sn', 12)->comment('写入人编号');
             $table->char('creator_name', 10)->comment('写入人姓名');

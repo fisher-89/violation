@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Admin\PunishRequest;
 use App\Models\PunishHasAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class PunishController extends Controller
     protected $punishService;
     protected $punishHasAuthModel;
     protected $produceMoneyService;
+    protected $error;
 
     public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth)
     {
@@ -103,7 +105,7 @@ class PunishController extends Controller
         $data['violateAt'] = $request->violate_at;
         $data['ruleId'] = $request->rule_id;
         $punish = DB::table('punish')->where('id', $id)->first();
-        $quantity = isset($request->quantity) ? $request->quantity : DB::table('punish')->where('rule_id', $request->rule_id)->count() + 1;
+        $quantity = isset($request->quantity) ? $request->quantity : DB::table('punish')->where(['rule_id' => $request['rule_id'], 'month' => $request['violate_at']])->count() + 1;
         $this->validate($request,
             [
                 'rule_id' => ['required', 'numeric', 'exists:rules,id'],//制度表I
@@ -152,6 +154,7 @@ class PunishController extends Controller
                         }
                     }
                 }],//违纪日期
+                'area' => 'required|max:4',
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
@@ -188,6 +191,7 @@ class PunishController extends Controller
                 'violate_at' => '违纪日期',
                 'money' => '金额',
                 'score' => '分值',
+                'area' => '地区',
                 'has_paid' => '是否支付',
                 'paid_at' => '付款时间',
                 'sync_point' => '是否同步积分制'
@@ -224,5 +228,151 @@ class PunishController extends Controller
         if (!in_array($code, $oa)) {
             abort(401, '你没有权限操作');
         }
+    }
+
+    public function batchStore(Request $request)
+    {
+        $this->authority($request->user()->authorities['oa'], 200);
+        $all = $request->all();
+        if (count($all) == count($all, 1)) abort(400, '数据格式不正确');
+        $this->validate($request, [
+            'area' => 'required|numeric|max:3',
+            'pushing' => 'required|array',
+            'pushing.*' => ['required', Rule::exists('pushing_authority', 'id')->where('staff_sn', $request->user()->staff_sn),],
+            'sync_point' => 'required|numeric|max:1'
+        ], [], [
+            'area' => '地区',
+            'pushing' => '推送群',
+            'pushing.*' => '推送',
+            'sync_point' => '积分同步',
+        ]);
+        $key = 0;
+        DB::beginTransaction();
+        foreach ($all['data'] as $value) {
+            $key++;
+            $this->error = [];
+            if (empty($value['staff_sn']) || !is_int($value['staff_sn'])) {
+                $this->error['staff_sn'][] = '员工编号错误';
+                $staff = null;
+            } else {
+                $staff = app('api')->withRealException()->getStaff(trim($value['staff_sn']));
+            }
+            if (empty($value['billing_sn']) || !is_int($value['billing_sn'])) {
+                $this->error['billing_sn'][] = '开单人编号错误';
+                $billing = null;
+            } else {
+                $billing = app('api')->withRealException()->getStaff(trim($value['billing_sn']));
+            }
+            $punishObject = new PunishRequest($value);
+            $this->verifyBatch($punishObject, $staff, $billing);
+            if ($this->error != []) {
+                $info['errors'][$key] = $this->error;
+                continue;
+            }
+            $point[] = $this->punishService->storePunishData($request, $punishObject, $staff, $billing);
+        }
+        if ($all['sync_point'] == 1 && isset($point)) {
+            try {
+                $pointArr = $this->punishService->storePoint($point);
+                if (!isset($pointArr[0]['source_foreign_key'])) {
+                    DB::rollBack();
+                    abort(500, '数据同步验证错误,请联系管理员');
+                }
+                foreach ($pointArr as $item) {
+                    DB::table('punish')->where('id', $item['source_foreign_key'])->update([
+                        'point_log_id' => $item['id']
+                    ]);
+                }
+            } catch (\Exception $exception) {
+                DB::rollBack();
+                abort(500, '添加失败，错误：' . $exception->getMessage());
+            }
+        }
+        DB::commit();
+        if (isset($info)) return $info;
+    }
+
+    protected function verifyBatch($object, $staff, $billing)
+    {
+        $data['staffSn'] = $object->staff_sn;
+        $data['violateAt'] = $object->violate_at;
+        $data['ruleId'] = $object->rule_id;
+        $qu = DB::table('punish')->where(['rule_id' => $object->rule_id, 'month' => $object->violate_at])->count() + 1;
+        $object->quantity = $qu == $object->quantity ? $qu : $object->quantity;
+        try {
+            $this->validate($object, [
+                'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff) {
+                    if ($staff == null) {
+                        $this->error['staff_sn'][] = '编号错误';
+                    }
+                    if ($staff['status_id'] == '-1') {
+                        $this->error['staff_sn'][] = '当前人员属于离职状态';
+                    }
+                }],//被大爱者编号
+                'staff_name' => 'required|max:10',//被大爱者名字
+                'billing_sn' => ['required', 'numeric',
+                    function ($attribute, $value, $event) use ($billing) {
+                        if ($billing == null) {
+                            $this->error['billing_sn'][] = '开单人编号未找到';
+                        }
+                    }
+                ],//开单人编号
+                'billing_at' => ['required', 'date', 'before:' . date('Y-m-d H:i:s'), 'after_or_equal:' . $object->violate_at,
+                    function ($attribute, $value, $event) {
+                        if (substr($value, 0, 7) != date('Y-m')) {
+                            $this->error['billing_at'][] = '开单时间不能跨月';//todo 上传的次数处理，录入两条一样次数怎么算
+                        }
+                    }],//开单时间
+                'billing_name' => 'required|max:10',
+                'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
+                'quantity' => 'required|numeric',
+                'sync_point' => 'boolean|nullable|numeric',
+                'rule_id' => 'required|numeric|exists:rules,id',//制度表
+                'money' => ['required', 'numeric',
+                    function ($attribute, $value, $event) use ($data, $staff, $object) {
+                        $now = $this->produceMoneyService->generate($staff, $data, 'money', $object->quantity);
+                        if ($now['data'] != $value && $now['states'] != 1) {
+                            $this->error['money'][] = '金额被改动';
+                        }
+                    }
+                ],//大爱金额
+                'score' => ['required', 'numeric',
+                    function ($attribute, $value, $event) use ($data, $staff, $object) {
+                        $score = $this->produceMoneyService->generate($staff, $data, 'score', $object->quantity);
+                        if ($score['data'] != $value && $score['states'] != 1) {
+                            $this->error['score'][] = '分值被改动';
+                        }
+                    }
+                ],//分值
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->validator->errors()->getMessages() as $k => $val) {
+                $this->error[$k] = $this->conversionValue($val);
+            }
+        } catch (\Exception $exception) {
+            $this->error['message'] = '系统异常：' . $exception->getMessage();
+        }
+    }
+
+    protected function conversionValue($value)
+    {
+        $array = [];
+        foreach ($value as $item) {
+            $arr = explode(' ', $item);
+            if (count($arr) > 2) {
+                $clean = [];
+                foreach ($arr as $items) {
+                    if (preg_match('/^[A-Za-z]+$/', $items)) {
+                        unset($items);
+                    } else {
+                        $clean[] = $items;
+                    }
+                }
+                $array[] = implode($clean);
+            } else {
+                $array[] = isset($arr[1]) ? $arr[1] : $arr[0];
+            }
+        }
+        return $array;
     }
 }
