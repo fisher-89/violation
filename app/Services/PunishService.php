@@ -343,11 +343,11 @@ class PunishService
      */
     public function listPaymentUpdate($request)
     {
-        $data = [];
+        $all = $request->all();
         if (empty($all['paid_type'])) abort(404, '未找到支付类型');
+        $data = [];
         try {
             DB::beginTransaction();
-            $all = $request->all();
             foreach ($all['id'] as $item) {
                 $punish = $this->punishModel->with('rules.ruleTypes')->find($item);
                 $data[] = $punish;
