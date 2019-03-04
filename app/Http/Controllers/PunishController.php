@@ -208,6 +208,10 @@ class PunishController extends Controller
     public function listPaymentMoney(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 203);
+        $this->validate($request,[
+            'id'=>'required|array',
+            'id.*'=>'required|numeric',
+        ]);
         return $this->punishService->listPaymentUpdate($request);
     }
 
@@ -329,7 +333,15 @@ class PunishController extends Controller
                     }],//开单时间
                 'billing_name' => 'required|max:10',
                 'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
-                'quantity' => 'required|numeric',
+                'quantity' => ['required','numeric',function($attribute, $value, $event)use ($data, $rule) {
+                    if($rule != false){
+                        $quantity = $rule->money_custom_settings == 1 || $rule->score_custom_settings == 1 ?
+                            $value : DB::table('punish')->where(['staff_sn'=>$data['staffSn'],'rule_id'=>$data['ruleId'],'violate_at'=>$data['violateAt']])->count();
+                        if($value != $quantity){
+                            $this->error['quantity'][] = '违纪次数错误';
+                        }
+                    }
+                }],
                 'sync_point' => 'boolean|nullable|numeric',
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
