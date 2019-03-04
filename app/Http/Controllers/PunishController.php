@@ -297,10 +297,14 @@ class PunishController extends Controller
         $data['staffSn'] = $object->staff_sn;
         $data['violateAt'] = $object->violate_at;
         $data['ruleId'] = $object->rule_id;
-        $qu = DB::table('punish')->where(['rule_id' => $object->rule_id, 'month' => $object->violate_at])->count() + 1;
-        $object->quantity = $qu == $object->quantity ? $qu : $object->quantity;
+        $rule = DB::table('rules')->where('id', $object->rule_id)->first();
         try {
             $this->validate($object, [
+                'rule_id' => ['required','numeric', function ($attribute, $value, $event) use ($rule) {
+                    if ($rule == false) {
+                        $this->error['rule_id'][] = '大爱原因错误';
+                    }
+                }],
                 'staff_sn' => ['required', 'numeric', function ($attribute, $value, $event) use ($staff) {
                     if ($staff == null) {
                         $this->error['staff_sn'][] = '编号错误';
@@ -327,20 +331,25 @@ class PunishController extends Controller
                 'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
                 'quantity' => 'required|numeric',
                 'sync_point' => 'boolean|nullable|numeric',
-                'rule_id' => 'required|numeric|exists:rules,id',//制度表
                 'money' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data, $staff, $object) {
-                        $now = $this->produceMoneyService->generate($staff, $data, 'money', $object->quantity);
-                        if ($now['data'] != $value && $now['states'] != 1) {
-                            $this->error['money'][] = '金额被改动';
+                    function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
+                        if ($rule != false) {
+                            $quantity = $rule->money_custom_settings == 1 ? $object->quantity : '';
+                            $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
+                            if ($now['data'] != $value && $now['states'] != 1) {
+                                $this->error['money'][] = '金额被改动';
+                            }
                         }
                     }
                 ],//大爱金额
                 'score' => ['required', 'numeric',
-                    function ($attribute, $value, $event) use ($data, $staff, $object) {
-                        $score = $this->produceMoneyService->generate($staff, $data, 'score', $object->quantity);
-                        if ($score['data'] != $value && $score['states'] != 1) {
-                            $this->error['score'][] = '分值被改动';
+                    function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
+                        if ($rule != false) {
+                            $quantity = $rule->score_custom_settings == 1 ? $object->quantity : '';
+                            $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
+                            if ($score['data'] != $value && $score['states'] != 1) {
+                                $this->error['score'][] = '分值被改动';
+                            }
                         }
                     }
                 ],//分值

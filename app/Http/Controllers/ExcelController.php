@@ -133,7 +133,7 @@ class ExcelController extends Controller
                 'has_paid' => is_numeric($res[$i][7]) ? (int)$res[$i][7] : $res[$i][7],
                 'action_staff_sn' => $res[$i][7] == 1 ? $request->user()->realname : null,
                 'paid_at' => $res[$i][7] == 1 ? $res[$i][8] == true ? $res[$i][8] : date('Y-m-d H:i:s') : null,
-                'month' => date('Ym'),
+                'month' => isset($res[$i][4]) ? date('Ym', strtotime($res[$i][4])): date('Ym', strtotime($res[$i][2])),
                 'remark' => $res[$i][9],
                 'pushing' => $this->pushingDispose($res[$i][10]),
                 'sync_point' => is_numeric($res[$i][11]) ? (int)$res[$i][11] : $res[$i][11],

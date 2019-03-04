@@ -98,7 +98,8 @@ class TotalService
                     'paid_money' => $key == 'salary' ? $all['paid'] + $countStaff->paid_money : $countStaff->money,//如果先用工资扣款，再用微信数据无法验证准确性
                     $key => $countStaff->money - $countStaff->paid_money,
                     'has_settle' => 1]);
-                $this->punishModel->where(['month' => $countStaff->month, 'staff_sn' => $countStaff->staff_sn])->update([
+                $this->punishModel->where('staff_sn', $countStaff->staff_sn)->whereYear('violate_at',substr($countStaff->month,4))
+                    ->whereMonth('violate_at',substr($countStaff->month,-2))->update([
                     'has_paid' => 1,
                     'action_staff_sn' => $request->user()->staff_sn,
                     'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'],
