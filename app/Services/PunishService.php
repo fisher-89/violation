@@ -394,8 +394,8 @@ class PunishService
     {
         $punish = $this->punishModel->with('rules.ruleTypes')->find($request->route('id'));
         if ((bool)$punish == false) abort(404, '未找到数据');
-        try {
-            DB::beginTransaction();
+//        try {
+//            DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym',strtotime($punish->billing_at))])->first();
             if ($punish->has_paid == 1) {
                 $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
@@ -416,11 +416,11 @@ class PunishService
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
             }
-            DB::commit();
-        } catch (\Exception $exception) {
-            DB::rollBack();
-            abort(500, '操作失败，错误：' . $exception->getMessage());
-        }
+//            DB::commit();
+//        } catch (\Exception $exception) {
+//            DB::rollBack();
+//            abort(500, '操作失败，错误：' . $exception->getMessage());
+//        }
         return response($punish, 201);
     }
 
