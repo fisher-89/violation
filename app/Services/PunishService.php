@@ -344,10 +344,10 @@ class PunishService
     public function listPaymentUpdate($request)
     {
         $data = [];
+        if (empty($all['paid_type'])) abort(404, '未找到支付类型');
         try {
             DB::beginTransaction();
             $all = $request->all();
-            if (empty($all['paid_type'])) abort(404, '未找到支付类型');
             foreach ($all['id'] as $item) {
                 $punish = $this->punishModel->with('rules.ruleTypes')->find($item);
                 $data[] = $punish;
@@ -359,7 +359,7 @@ class PunishService
                     'paid_at' => date('Y-m-d H:i:s')
                 ]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym',strtotime($punish->billing_at))])->first();
-                $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid'] == 2 ? 'wechat' : 'salary';
+                $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
                     'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid_type'] : $countStaff->paid_money + $punish->money,
                     $paid => $paid == 'salary' ? $all['paid_type'] + $countStaff->$paid : $punish->money + $countStaff->$paid,
