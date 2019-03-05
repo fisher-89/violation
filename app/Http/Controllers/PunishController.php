@@ -208,9 +208,9 @@ class PunishController extends Controller
     public function listPaymentMoney(Request $request)
     {
         $this->authority($request->user()->authorities['oa'], 203);
-        $this->validate($request,[
-            'id'=>'required|array',
-            'id.*'=>'required|numeric',
+        $this->validate($request, [
+            'id' => 'required|array',
+            'id.*' => 'required|numeric',
         ]);
         return $this->punishService->listPaymentUpdate($request);
     }
@@ -304,7 +304,7 @@ class PunishController extends Controller
         $rule = DB::table('rules')->where('id', $object->rule_id)->first();
         try {
             $this->validate($object, [
-                'rule_id' => ['required','numeric', function ($attribute, $value, $event) use ($rule) {
+                'rule_id' => ['required', 'numeric', function ($attribute, $value, $event) use ($rule) {
                     if ($rule == false) {
                         $this->error['rule_id'][] = '大爱原因错误';
                     }
@@ -333,16 +333,15 @@ class PunishController extends Controller
                     }],//开单时间
                 'billing_name' => 'required|max:10',
                 'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
-                'quantity' => ['required','numeric',function($attribute, $value, $event)use ($data, $rule) {
-                    if($rule != false){
+                'quantity' => ['required', 'numeric', function ($attribute, $value, $event) use ($data, $rule) {
+                    if ($rule != false) {
                         $quantity = $rule->money_custom_settings == 1 || $rule->score_custom_settings == 1 ?
-                            $value : DB::table('punish')->where(['staff_sn'=>$data['staffSn'],'rule_id'=>$data['ruleId'],'violate_at'=>$data['violateAt']])->count();
-                        if($value != $quantity){
+                            $value : DB::table('punish')->where(['staff_sn' => $data['staffSn'], 'rule_id' => $data['ruleId'], 'violate_at' => $data['violateAt']])->count() + 1;
+                        if ($value != $quantity) {
                             $this->error['quantity'][] = '违纪次数错误';
                         }
                     }
                 }],
-                'sync_point' => 'boolean|nullable|numeric',
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
                         if ($rule != false) {

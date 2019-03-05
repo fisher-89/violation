@@ -172,7 +172,7 @@ class PunishService
             'paid_at' => $paidDate,
             'area' => $request->area,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
-            'month' => isset($request->violate_at) ? date('Ym', strtotime($request->violate_at)): date('Ym', strtotime($request->billing_at)),
+            'month' => isset($request->violate_at) ? date('Ym', strtotime($request->violate_at)) : date('Ym', strtotime($request->billing_at)),
             'remark' => isset($request->remark) ? $request->remark : null,
             'creator_sn' => Auth::user()->staff_sn,
             'creator_name' => Auth::user()->realname,
@@ -188,7 +188,7 @@ class PunishService
      */
     public function updateCountData($request, $punish, $yes)//1是添加
     {
-        $staffData = $this->countStaffModel->where(['month' => date('Ym',strtotime($punish->billing_at)), 'staff_sn' => $request->staff_sn])->first();
+        $staffData = $this->countStaffModel->where(['month' => date('Ym', strtotime($punish->billing_at)), 'staff_sn' => $request->staff_sn])->first();
         if ($staffData == false) {
             $count = $this->countStaffModel->create([
                 'department_id' => $punish->department_id,
@@ -196,7 +196,7 @@ class PunishService
                 'staff_sn' => $punish->staff_sn,
                 'staff_name' => $punish->staff_name,
                 'paid_money' => $request->has_paid == 1 ? $request->money : 0,
-                'month' => date('Ym',strtotime($request->billing_at)),
+                'month' => date('Ym', strtotime($request->billing_at)),
                 'money' => $request->money,
                 'score' => $request->score,
                 'has_settle' => $request->has_paid >= 1 ? 1 : 0
@@ -358,7 +358,7 @@ class PunishService
                     'action_staff_sn' => $request->user()->staff_sn,
                     'paid_at' => date('Y-m-d H:i:s')
                 ]);
-                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym',strtotime($punish->billing_at))])->first();
+                $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
                 $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
                     'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid_type'] : $countStaff->paid_money + $punish->money,
@@ -394,9 +394,9 @@ class PunishService
     {
         $punish = $this->punishModel->with('rules.ruleTypes')->find($request->route('id'));
         if ((bool)$punish == false) abort(404, '未找到数据');
-//        try {
-//            DB::beginTransaction();
-            $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym',strtotime($punish->billing_at))])->first();
+        try {
+            DB::beginTransaction();
+            $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
             if ($punish->has_paid == 1) {
                 $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
                 $punish->update(['has_paid' => 0, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => null, 'paid_at' => NULL]);
@@ -416,11 +416,11 @@ class PunishService
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
             }
-//            DB::commit();
-//        } catch (\Exception $exception) {
-//            DB::rollBack();
-//            abort(500, '操作失败，错误：' . $exception->getMessage());
-//        }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            abort(500, '操作失败，错误：' . $exception->getMessage());
+        }
         return response($punish, 201);
     }
 
@@ -451,7 +451,7 @@ class PunishService
      */
     protected function reduceCount($punish)
     {
-        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym',strtotime($punish->billing_at))])->first();
+        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
         if ($countStaff == true) {
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
@@ -521,7 +521,7 @@ class PunishService
             'violate_at' => isset($object->violate_at) ? $object->violate_at : abort(500, '违纪日期'),
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'area' => $all['area'],
-            'month' => isset($object->violate_at) ? date('Ym', strtotime($object->violate_at)): date('Ym', strtotime($object->billing_at)),
+            'month' => isset($object->violate_at) ? date('Ym', strtotime($object->violate_at)) : date('Ym', strtotime($object->billing_at)),
             'remark' => isset($value['remark']) ? $object->remark : null,
             'creator_sn' => $request->user()->staff_sn,
             'creator_name' => $request->user()->realname,
