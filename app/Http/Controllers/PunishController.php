@@ -171,8 +171,8 @@ class PunishController extends Controller
                         }
                     }
                 ],//分值
-                'has_paid' => 'required|boolean|max:1|min:0',
-                'paid_at' => 'date|nullable|after_or_equal:billing_at',
+//                'has_paid' => 'required|boolean|max:1|min:0',
+//                'paid_at' => 'date|nullable|after_or_equal:billing_at',
                 'sync_point' => ['boolean', 'numeric', function ($attribute, $value, $event) use ($id, $punish) {
                     if ($id == true) {
                         if ($punish->sync_point != $value) {
@@ -192,8 +192,8 @@ class PunishController extends Controller
                 'money' => '金额',
                 'score' => '分值',
                 'area' => '地区',
-                'has_paid' => '是否支付',
-                'paid_at' => '付款时间',
+//                'has_paid' => '是否支付',
+//                'paid_at' => '付款时间',
                 'sync_point' => '是否同步积分制'
             ]
         );
@@ -328,7 +328,7 @@ class PunishController extends Controller
                 'billing_at' => ['required', 'date', 'before:' . date('Y-m-d H:i:s'), 'after_or_equal:' . $object->violate_at,
                     function ($attribute, $value, $event) {
                         if (substr($value, 0, 7) != date('Y-m')) {
-                            $this->error['billing_at'][] = '开单时间不能跨月';//todo 上传的次数处理，录入两条一样次数怎么算
+                            $this->error['billing_at'][] = '开单时间不能跨月';
                         }
                     }],//开单时间
                 'billing_name' => 'required|max:10',

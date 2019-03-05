@@ -45,12 +45,11 @@ class PunishService
      */
     public function receiveData($request, $OAData, $OADataPunish)
     {
-        $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
         $data['staffSn'] = $request->staff_sn;
         $data['ruleId'] = $request->rule_id;
         $data['violateAt'] = $request->violate_at;
         $howNumber = $this->countData($data);
-        $sql = $this->regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber);
+        $sql = $this->regroupSql($request, $OAData, $OADataPunish, $howNumber);
         DB::beginTransaction();
         $punish = $this->punishModel->create($sql);
         $hasArray = [];
@@ -147,7 +146,7 @@ class PunishService
      * @param $howNumber
      * @return array
      */
-    protected function regroupSql($request, $OAData, $OADataPunish, $paidDate, $howNumber)
+    protected function regroupSql($request, $OAData, $OADataPunish, $howNumber)
     {
         return [
             'rule_id' => isset($request->rule_id) ? $request->rule_id : abort(500, '未找到制度id'),
@@ -167,9 +166,7 @@ class PunishService
             'billing_name' => isset($OADataPunish['realname']) ? $OADataPunish['realname'] : null,
             'billing_at' => isset($request->billing_at) ? $request->billing_at : abort(500, '未找到开单日期'),
             'violate_at' => isset($request->violate_at) ? $request->violate_at : abort(500, '违纪日期'),
-            'has_paid' => $request->has_paid == 1 ? 1 : 0,
-            'action_staff_sn' => $request->has_paid == 1 ? $request->user()->staff_sn : null,
-            'paid_at' => $paidDate,
+            'has_paid' => 0,
             'area' => $request->area,
             'sync_point' => isset($request->sync_point) ? $request->sync_point : null,
             'month' => isset($request->violate_at) ? date('Ym', strtotime($request->violate_at)) : date('Ym', strtotime($request->billing_at)),
@@ -188,26 +185,25 @@ class PunishService
      */
     public function updateCountData($request, $punish, $yes)//1是添加
     {
-        $staffData = $this->countStaffModel->where(['month' => date('Ym', strtotime($punish->billing_at)), 'staff_sn' => $request->staff_sn])->first();
+        $billing = date('Ym', strtotime($punish->billing_at));
+        $staffData = $this->countStaffModel->where(['month' => $billing, 'staff_sn' => $request->staff_sn])->first();
         if ($staffData == false) {
             $count = $this->countStaffModel->create([
                 'department_id' => $punish->department_id,
                 'brand_name' => $punish->brand_name,
                 'staff_sn' => $punish->staff_sn,
                 'staff_name' => $punish->staff_name,
-                'paid_money' => $request->has_paid == 1 ? $request->money : 0,
-                'month' => date('Ym', strtotime($request->billing_at)),
+                'paid_money' => 0,
+                'month' => $billing,
                 'money' => $request->money,
                 'score' => $request->score,
-                'has_settle' => $request->has_paid >= 1 ? 1 : 0
+                'has_settle' => 0
             ]);
         } else {
             $staffData->update([
-                'paid_money' => $request->has_paid == 1 ? $staffData->paid_money + $request->money : $staffData->paid_money,
                 'money' => $request->money + $staffData->money,
                 'score' => $request->score + $staffData->score,
-                'has_settle' => $request->has_paid == 1 ? $request->money + $staffData->money <=
-                $staffData->paid_money + $request->money ? 1 : 0 : 0
+                'has_settle' => 0
             ]);
         }
         if ($yes == 1) {
@@ -239,7 +235,6 @@ class PunishService
      */
     public function updatePunish($request, $staff, $billing)
     {
-        $paidDate = $request->has_paid == 1 ? $request->paid_at == false ? date('Y-m-d H:i:s') : $request->paid_at : null;
         $data['staffSn'] = $request->staff_sn;
         $data['ruleId'] = $request->rule_id;
         $data['violateAt'] = $request->violate_at;
@@ -256,7 +251,7 @@ class PunishService
         $rule = $this->ruleModel->find($punish->rule_id);
         $rule->rule_types = $this->ruleTypesModel->where('id', $rule['type_id'])->first();
         $this->updateBeforeDateVerify($request->route('id'), $punish['month'], $staff['staff_sn']);
-        if ($this->hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $punish) == 1) {
+        if ($this->hasUpdate($request, $staff, $billing, $howNumber, $punish) == 1) {
             $punish->rules = $rule;
             $punish->pushing = $request->pushing;
             return $punish;
@@ -276,7 +271,7 @@ class PunishService
             if ($punish->point_log_id == true) {
                 $this->deletePoint($punish->point_log_id);//删除积分制   有返回数据  需要调用
             }
-            $sql = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
+            $sql = $this->regroupSql($request, $staff, $billing, $howNumber);
             unset($sql['month'], $sql['creator_sn'], $sql['creator_name']);
             $punish->update($sql);
             $this->updateCountData($request, $punish, 0);
@@ -310,9 +305,9 @@ class PunishService
      * @param $model
      * @return int
      */
-    protected function hasUpdate($request, $staff, $billing, $paidDate, $howNumber, $model)
+    protected function hasUpdate($request, $staff, $billing, $howNumber, $model)
     {
-        $arr = $this->regroupSql($request, $staff, $billing, $paidDate, $howNumber);
+        $arr = $this->regroupSql($request, $staff, $billing, $howNumber);
         unset($arr['month'], $arr['creator_sn'], $arr['creator_name']);
         $array = array_diff_assoc($arr, $model->toArray());
         if ($array == []) {
@@ -399,7 +394,12 @@ class PunishService
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
             if ($punish->has_paid == 1) {
                 $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
-                $punish->update(['has_paid' => 0, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => null, 'paid_at' => NULL]);
+                $punish->update([
+                    'has_paid' => 0,
+                    'action_staff_sn' => $request->user()->staff_sn,//todo 在大爱页面点击退款，统计没有进行操作   （20块钱）
+                    'paid_type' => null,
+                    'paid_at' => NULL
+                ]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money - $punish->money,
                     $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
@@ -409,7 +409,12 @@ class PunishService
                 $all = $request->all();
                 if (empty($all['paid_type'])) abort(404, '未找到付款类型');
                 $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
-                $punish->update(['has_paid' => 1, 'action_staff_sn' => $request->user()->staff_sn, 'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'], 'paid_at' => date('Y-m-d H:i:s')]);
+                $punish->update([
+                    'has_paid' => 1,
+                    'action_staff_sn' => $request->user()->staff_sn,
+                    'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'],
+                    'paid_at' => date('Y-m-d H:i:s')
+                ]);
                 $countStaff->update([
                     'paid_money' => $countStaff->paid_money + $punish->money,
                     $key => $punish->paid_type > 2 ? $countStaff->$key + $punish->paid_type : $countStaff->$key + $punish->money,
@@ -453,10 +458,14 @@ class PunishService
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
         if ($countStaff == true) {
+            $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
                 'score' => $countStaff->score - $punish->score,
-                'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
+                $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
+                'has_settle' => $punish->paid_type > 2 ?
+                    ($countStaff->paid_money - $punish->paid_type >= $countStaff->money ? 1 : 0) :
+                    ($countStaff->paid_money - $punish->paid_money >= $countStaff->money ? 1 : 0)
             ]);
         }
     }
