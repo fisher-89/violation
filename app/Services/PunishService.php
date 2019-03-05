@@ -401,7 +401,7 @@ class PunishService
                     'paid_at' => NULL
                 ]);
                 $countStaff->update([
-                    'paid_money' => $countStaff->paid_money - $punish->money,
+                    'paid_money' => $punish->paid_type > 2 ? $countStaff->key - $punish->paid_type : $countStaff->paid_money - $punish->money,
                     $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
                     'has_settle' => 0
                 ]);
