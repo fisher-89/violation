@@ -47,9 +47,10 @@ class PushCommand extends Command
      */
     public function handle()
     {
+        exit;
         $punish = $this->punishModel->whereBetween('created_at', [date('Y-m-d 21:00:00', strtotime('-1 day')),
             date('Y-m-d 20:59:59')])->where('has_paid', 0)->with(['rules', 'pushing.pushingAuthority'])->get();
-//        $arr = is_array($punish) ? [] : $punish->toArray();
+        $arr = is_array($punish) ? [] : $punish->toArray();
         if ($arr != []) {
             $flock = [];
             foreach ($arr as $items) {
