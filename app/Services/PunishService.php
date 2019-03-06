@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\PunishHasAuth;
 use App\Models\Rules;
 use App\Models\Punish;
 use App\Models\BillImage;
 use App\Models\RuleTypes;
 use App\Models\CountStaff;
+use App\Models\PunishHasAuth;
 use App\Models\CountHasPunish;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Resources\PunishCollection;
 
 class PunishService
 {
@@ -376,7 +377,13 @@ class PunishService
      */
     public function punishList($request)
     {
-        return $this->punishModel->with(['rules.ruleTypes','pushing.pushingAuthority'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        $list = $this->punishModel->with(['rules.ruleTypes','pushing.pushingAuthority'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        if (isset($list['data'])) {
+            $list['data'] = new PunishCollection(collect($list['data']));
+            return $list;
+        } else {
+            return new PunishCollection($list);
+        }
     }
 
     /**
