@@ -376,7 +376,7 @@ class PunishService
      */
     public function punishList($request)
     {
-        return $this->punishModel->with('rules.ruleTypes')->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        return $this->punishModel->with(['rules.ruleTypes','pushing.pushingAuthority'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
     }
 
     /**
