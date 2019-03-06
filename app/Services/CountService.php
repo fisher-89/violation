@@ -38,12 +38,13 @@ class CountService
     public function generate($staff, $arr, $type, $quantity = '')
     {
         $info = [];
-        $this->quantity = $quantity;
-        $signs = $this->signsModel->get();
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
+        $num = $this->countRuleNum($arr);
+        $this->quantity = $equation->$str == 1 ? $quantity : $num;
+        $signs = $this->signsModel->get();
         $info['states'] = $equation->$str == '1' ? 1 : 0;
-        $info['quantity'] = $this->countRuleNum($arr);
+        $info['quantity'] = $num;
         $variable = $this->variableModel->get();
         $systemArray = explode(',', $equation->$type);
         $repeatedly = $this->operator($signs, implode($systemArray));

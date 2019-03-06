@@ -42,7 +42,7 @@ class CountController extends Controller
         $this->moneyVerify($request, $staff);
         $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
         $all = $request->all();
-        $quantity = isset($all['quantity']) && $all['quantity'] != false ? $all['quantity'] : '';
+        $quantity = empty($all['quantity']) ? '' : $all['quantity'];
         return $this->countService->generate($staff, $arr, 'score', (string)$quantity);
     }
 
