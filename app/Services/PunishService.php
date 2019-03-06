@@ -349,7 +349,7 @@ class PunishService
                 if ($punish->has_paid == 1) continue;
                 $punish->update([
                     'has_paid' => 1,
-                    'paid_type' => $all['paid_type'] > 2 ? 3 : $all['paid_type'],
+                    'paid_type' => $all['paid_type'],
                     'action_staff_sn' => $request->user()->staff_sn,
                     'paid_at' => date('Y-m-d H:i:s')
                 ]);
@@ -396,7 +396,7 @@ class PunishService
                 $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
                 $punish->update([
                     'has_paid' => 0,
-                    'action_staff_sn' => $request->user()->staff_sn,//todo 在大爱页面点击退款，统计没有进行操作   （20块钱）
+                    'action_staff_sn' => $request->user()->staff_sn,
                     'paid_type' => null,
                     'paid_at' => NULL
                 ]);
