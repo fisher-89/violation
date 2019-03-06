@@ -154,7 +154,7 @@ class PunishController extends Controller
                         }
                     }
                 }],//违纪日期
-//                'area' => 'required|max:3',
+                'area' => 'required|max:3',
                 'money' => ['required', 'numeric',
                     function ($attribute, $value, $event) use ($data, $staff, $quantity) {
                         $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
