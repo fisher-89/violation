@@ -87,6 +87,11 @@ class PunishService
         return response($punish, 201);
     }
 
+    /**
+     * 跨月清除上月图片
+     *
+     * @param $staff
+     */
     public function eliminateUltimoBill($staff)
     {
         $monthData = $this->billImageModel->where(['staff_sn' => $staff->staff_sn, 'is_clear' => 0])->whereBetween('created_at',
@@ -187,9 +192,10 @@ class PunishService
     public function updateCountData($request, $punish, $yes)//1是添加
     {
         $billing = date('Ym', strtotime($punish->billing_at));
-        $staffData = $this->countStaffModel->where(['month' => $billing, 'staff_sn' => $request->staff_sn])->first();
+        $staffData = $this->countStaffModel->where(['month' => $billing, 'staff_sn' => $request->staff_sn, 'area' => $punish->area])->first();
         if ($staffData == false) {
             $count = $this->countStaffModel->create([
+                'area' => $punish->area,
                 'department_id' => $punish->department_id,
                 'brand_name' => $punish->brand_name,
                 'staff_sn' => $punish->staff_sn,
@@ -377,7 +383,7 @@ class PunishService
      */
     public function punishList($request)
     {
-        $list = $this->punishModel->with(['rules.ruleTypes','pushing.pushingAuthority'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
+        $list = $this->punishModel->with(['rules.ruleTypes', 'pushing.pushingAuthority'])->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
         if (isset($list['data'])) {
             $list['data'] = new PunishCollection(collect($list['data']));
             return $list;

@@ -125,7 +125,7 @@ class TotalService
         $money = 0;
         foreach ($count->countHasPunish as $item) {
             if ($item->punish->paid_type > 2) {
-                $money = $item->punish->money + $money;
+                $money = isset($item->punish->money) ? $item->punish->money + $money : $money;
             }
         }
         return $count->money - $money + $count->paid_money;

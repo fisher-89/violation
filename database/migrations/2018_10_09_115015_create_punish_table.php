@@ -88,6 +88,7 @@ class CreatePunishTable extends Migration
 
         Schema::create('count_staff', function (Blueprint $table) {
             $table->increments('id');
+            $table->unsignedTinyInteger('area')->commant('地区');
             $table->unsignedInteger('department_id')->comment('部门id');
             $table->char('brand_name', 10)->comment('品牌名称');
             $table->unsignedMediumInteger('staff_sn')->comment('被大爱者编号')->index();
