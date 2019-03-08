@@ -469,13 +469,13 @@ class PunishService
      */
     protected function reduceCount($punish)
     {
-        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
+        $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at)), 'area' => $punish->area])->first();
         if ($countStaff == true) {
-            $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
+//            $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
                 'score' => $countStaff->score - $punish->score,
-                $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
+//                $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
                 'has_settle' => $punish->paid_type > 2 ?
                     ($countStaff->paid_money - $punish->paid_type >= $countStaff->money ? 1 : 0) :
                     ($countStaff->paid_money - $punish->paid_money >= $countStaff->money ? 1 : 0)
