@@ -14,7 +14,7 @@ class CountStaff extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['department_id', 'brand_name', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money',
+    protected $fillable = ['area', 'department_id', 'brand_name', 'staff_sn', 'staff_name', 'month', 'paid_money', 'money',
         'score', 'alipay', 'wechat', 'salary', 'has_settle'];
 
     public function countHasPunish()
