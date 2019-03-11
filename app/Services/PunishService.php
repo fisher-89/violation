@@ -443,21 +443,20 @@ class PunishService
     }
 
     /**
-     *大爱软删除
+     * 大爱软删除
      */
     public function softRemove($request)
     {
         $punish = $this->punishModel->find($request->route('id'));
-        if ((bool)$punish == false) {
+        if ((bool)$punish == false)
             abort(404, '不存在的数据');
-        }
-        if ($punish->has_paid == 1) {
+        if ($punish->has_paid == 1)
             abort(400, '已支付数据不能删除');
-        }
+        if (substr($punish->billing_at, 0, 7) != date('Y-m'))
+            abort(400, '不能删除已生成账单数据');
         $this->reduceCount($punish);
-        if ($punish->point_log_id == true) {
+        if ($punish->point_log_id == true) 
             $this->deletePoint($punish->point_log_id);
-        }
         $punish->delete();
         return response('', 204);
     }
@@ -471,11 +470,9 @@ class PunishService
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at)), 'area' => $punish->area])->first();
         if ($countStaff == true) {
-//            $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
                 'score' => $countStaff->score - $punish->score,
-//                $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
                 'has_settle' => $punish->paid_type > 2 ?
                     ($countStaff->paid_money - $punish->paid_type >= $countStaff->money ? 1 : 0) :
                     ($countStaff->paid_money - $punish->paid_money >= $countStaff->money ? 1 : 0)
