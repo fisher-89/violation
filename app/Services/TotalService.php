@@ -48,7 +48,7 @@ class TotalService
 
     public function showData($request)
     {
-        $countData = $this->countStaffModel->where('month', $request->month)->get();
+        $countData = $this->countStaffModel->where(['month'=>$request->month,'area'=>$request->area])->get();
         $id = [];
         foreach ($countData as $value) {
             $id[] = $value['department_id'];
