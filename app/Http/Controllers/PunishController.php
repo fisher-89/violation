@@ -333,6 +333,7 @@ class PunishController extends Controller
                     if ($rule != false) {
                         $quantity = $rule->money_custom_settings == 1 || $rule->score_custom_settings == 1 ?
                             $value : DB::table('punish')->where(['staff_sn' => $data['staffSn'], 'rule_id' => $data['ruleId'], 'violate_at' => $data['violateAt']])->count() + 1;
+                        dd($quantity,$value);
                         if ($value != $quantity) {
                             $this->error['quantity'][] = '违纪次数错误';
                         }
