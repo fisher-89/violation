@@ -95,7 +95,7 @@ trait UserHelper
     {
         $options = [
             'base_uri' => method_exists($this, 'getPointUri') ? $this->getPointUri() : '',
-            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
+            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 10.0,
         ];
         return $options;
     }
@@ -104,7 +104,7 @@ trait UserHelper
     {
         $options = [
             'base_uri' => method_exists($this, 'getDingUri') ? $this->getDingUri() : '',
-            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
+            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 10.0,
         ];
 
         return $options;
@@ -119,7 +119,7 @@ trait UserHelper
     {
         $options = [
             'base_uri' => method_exists($this, 'getBaseUri') ? $this->getBaseUri() : '',
-            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 5.0,
+            'timeout' => property_exists($this, 'timeout') ? $this->timeout : 10.0,
         ];
         return $options;
     }
