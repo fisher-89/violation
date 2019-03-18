@@ -192,7 +192,7 @@ class PunishService
     public function updateCountData($request, $punish, $yes)//1是添加
     {
         $billing = date('Ym', strtotime($punish->billing_at));
-        $staffData = $this->countStaffModel->where(['month' => $billing, 'staff_sn' => $request->staff_sn, 'area' => $punish->area])->first();
+        $staffData = $this->countStaffModel->withTrashed()->where(['month' => $billing, 'staff_sn' => $request->staff_sn, 'area' => $punish->area])->first();
         if ($staffData == false) {
             $count = $this->countStaffModel->create([
                 'area' => $punish->area,
@@ -207,6 +207,9 @@ class PunishService
                 'has_settle' => 0
             ]);
         } else {
+            if($staffData->deleted_at == true){
+                $staffData->restore();
+            }
             $staffData->update([
                 'money' => $request->money + $staffData->money,
                 'score' => $request->score + $staffData->score,
@@ -455,8 +458,9 @@ class PunishService
         if (substr($punish->billing_at, 0, 7) != date('Y-m'))
             abort(400, '不能删除已生成账单数据');
         $this->reduceCount($punish);
-        if ($punish->point_log_id == true) 
+        if ($punish->point_log_id == true){
             $this->deletePoint($punish->point_log_id);
+        }
         $punish->delete();
         return response('', 204);
     }
@@ -470,6 +474,9 @@ class PunishService
     {
         $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at)), 'area' => $punish->area])->first();
         if ($countStaff == true) {
+            if ($countStaff->money - $punish->money == 0)
+                $countStaff->delete();
+            else
             $countStaff->update([
                 'money' => $countStaff->money - $punish->money,
                 'score' => $countStaff->score - $punish->score,
