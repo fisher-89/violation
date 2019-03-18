@@ -289,7 +289,7 @@ class PunishController extends Controller
                 abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
-        if (isset($info)) return $info;
+        if (isset($info)) return response($info,422);
     }
 
     protected function verifyBatch($object, $staff, $billing)
@@ -331,9 +331,9 @@ class PunishController extends Controller
                 'violate_at' => 'required|date|before:' . date('Y-m-d H:i:s'),//违纪日期
                 'quantity' => ['required', 'numeric', function ($attribute, $value, $event) use ($data, $rule) {
                     if ($rule != false) {
+                        dd(DB::table('punish')->where(['staff_sn' => $data['staffSn'], 'rule_id' => $data['ruleId'], 'violate_at' => $data['violateAt']])->count());
                         $quantity = $rule->money_custom_settings == 1 || $rule->score_custom_settings == 1 ?
                             $value : DB::table('punish')->where(['staff_sn' => $data['staffSn'], 'rule_id' => $data['ruleId'], 'violate_at' => $data['violateAt']])->count() + 1;
-                        dd($quantity,$value,$data);
                         if ($value != $quantity) {
                             $this->error['quantity'][] = '违纪次数错误';
                         }
