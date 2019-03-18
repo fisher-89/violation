@@ -251,6 +251,7 @@ class PunishController extends Controller
             'sync_point' => '积分同步',
         ]);
         $key = 0;
+        DB::beginTransaction();
         foreach ($all['data'] as $value) {
             $key++;
             $this->error = [];
@@ -278,6 +279,7 @@ class PunishController extends Controller
             try {
                 $pointArr = $this->punishService->storePoint($point);
                 if (!isset($pointArr[0]['source_foreign_key'])) {
+                    DB::rollBack();
                     abort(500, '数据同步验证错误,请联系管理员');
                 }
                 foreach ($pointArr as $item) {
@@ -286,9 +288,11 @@ class PunishController extends Controller
                     ]);
                 }
             } catch (\Exception $exception) {
+                DB::rollBack();
                 abort(500, '添加失败，错误：' . $exception->getMessage());
             }
         }
+        DB::commit();
         if (isset($info)) return response($info,422);
     }
 
