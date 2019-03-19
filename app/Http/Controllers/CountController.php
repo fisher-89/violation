@@ -25,7 +25,7 @@ class CountController extends Controller
     {
         $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
         $this->moneyVerify($request, $staff);
-        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at, 'token' => $request->token];
         $all = $request->all();
         $quantity = isset($all['quantity']) && $all['quantity'] != false ? $all['quantity'] : '';
         return $this->countService->generate($staff, $arr, 'money', (string)$quantity);
@@ -40,7 +40,7 @@ class CountController extends Controller
     {
         $staff = isset($request->staff_sn) && $request->staff_sn == true ? app('api')->withRealException()->getStaff($request->staff_sn) : false;
         $this->moneyVerify($request, $staff);
-        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at];
+        $arr = ['staffSn' => $request->staff_sn, 'ruleId' => $request->rule_id, 'violateAt' => $request->violate_at, 'token' => $request->token];
         $all = $request->all();
         $quantity = empty($all['quantity']) ? '' : $all['quantity'];
         return $this->countService->generate($staff, $arr, 'score', (string)$quantity);

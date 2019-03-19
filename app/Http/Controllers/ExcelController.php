@@ -112,6 +112,7 @@ class ExcelController extends Controller
             $msg['staffSn'] = isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null;
             $msg['violateAt'] = $res[$i][4];
             $msg['ruleId'] = $check;
+            $msg['token'] = 111;
             $sql = [
                 'rule_id' => $check,
                 'staff_sn' => isset($oaData['staff_sn']) ? $oaData['staff_sn'] : null,

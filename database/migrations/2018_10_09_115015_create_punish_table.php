@@ -113,6 +113,14 @@ class CreatePunishTable extends Migration
             $table->foreign('punish_id')->references('id')->on('punish');
         });
 
+        Schema::create('pretreatment',function(Blueprint $table){
+            $table->increments('id');
+            $table->char('token',18)->comment('识别码');
+            $table->char('staff_sn',6)->comment('员工编号');
+            $table->char('month',6)->comment('违纪月份');
+            $table->integer('rules_id')->comment('制度id');
+        });
+
         Schema::create('signs', function (Blueprint $table) {
             $table->unsignedInteger('id');
             $table->char('code', 10)->default('')->comment('表达符');

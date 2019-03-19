@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Pretreatment;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
@@ -18,13 +19,15 @@ class CountService
     protected $variableModel;
     protected $signsModel;
     protected $quantity;
+    protected $pretreatmentModel;
 
-    public function __construct(Signs $signs, Punish $punishModel, Rules $rules, Variables $variable)
+    public function __construct(Signs $signs, Punish $punishModel, Rules $rules, Variables $variable, Pretreatment $pretreatment)
     {
         $this->ruleModel = $rules;
         $this->signsModel = $signs;
         $this->variableModel = $variable;
         $this->punishModel = $punishModel;
+        $this->pretreatmentModel = $pretreatment;
     }
 
     /**
@@ -41,10 +44,11 @@ class CountService
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
         $num = $this->countRuleNum($arr);
-        $this->quantity = $equation->$str == 1 ? $quantity : $num;
+        $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where(['staff_sn' => $arr['staffSn'], 'month' => date('Ym', strtotime($arr['violateAt'])), 'rules_id' => $arr['ruleId']])->count()+$num;
+        $this->quantity = $equation->$str == 1 ? $quantity : $number;
         $signs = $this->signsModel->get();
         $info['states'] = $equation->$str == '1' ? 1 : 0;
-        $info['quantity'] = $num;
+        $info['quantity'] = $number;
         $variable = $this->variableModel->get();
         $systemArray = explode(',', $equation->$type);
         $repeatedly = $this->operator($signs, implode($systemArray));
@@ -54,6 +58,24 @@ class CountService
             abort(500, '公式运算出错：包含非可运算数据');
         }
         $info['data'] = eval('return ' . $output . ';');
+        if ($arr['token'] != 111) {
+            $pretreatment = $this->pretreatmentModel->where('token', $arr['token'])->first();
+            if ($pretreatment == false) {
+                $pretreatment = $this->pretreatmentModel->create([
+                    'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
+                    'staff_sn' => $arr['staffSn'],
+                    'month' => date('Ym', strtotime($arr['violateAt'])),
+                    'rules_id' => $arr['ruleId']
+                ]);
+            }else{
+                $pretreatment->update([
+                    'staff_sn' => $arr['staffSn'],
+                    'month' => date('Ym', strtotime($arr['violateAt'])),
+                    'rules_id' => $arr['ruleId']
+                ]);
+            }
+            $info['token'] = $pretreatment->token;
+        }
         return $info;
     }
 

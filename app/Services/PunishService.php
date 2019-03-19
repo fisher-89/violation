@@ -567,6 +567,5 @@ class PunishService
         }
         $this->updateCountData($object, $punish, 1);
         return $this->regroupPointSql($rule, $object, $staff, $punish->id);
-        //推送和统计表加数据
     }
 }

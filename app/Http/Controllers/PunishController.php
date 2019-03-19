@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Admin\PunishRequest;
+use App\Models\Pretreatment;
 use App\Models\PunishHasAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,13 +15,15 @@ use Illuminate\Validation\Rule;
 class PunishController extends Controller
 {
     protected $punishService;
+    protected $pretreatmentModel;
     protected $punishHasAuthModel;
     protected $produceMoneyService;
     protected $error;
 
-    public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth)
+    public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth,Pretreatment $pretreatment)
     {
         $this->punishService = $punishService;
+        $this->pretreatmentModel = $pretreatment;
         $this->punishHasAuthModel = $punishHasAuth;
         $this->produceMoneyService = $produceMoneyService;
     }
@@ -104,6 +107,7 @@ class PunishController extends Controller
         $data['staffSn'] = $request->staff_sn;
         $data['violateAt'] = $request->violate_at;
         $data['ruleId'] = $request->rule_id;
+        $data['token'] = $request->token;
         $punish = DB::table('punish')->where('id', $id)->first();
         $quantity = isset($request->quantity) ? $request->quantity : DB::table('punish')->where(['rule_id' => $request['rule_id'], 'month' => $request['violate_at']])->count() + 1;
         $this->validate($request,
@@ -293,6 +297,7 @@ class PunishController extends Controller
             }
         }
         DB::commit();
+        $this->pretreatmentModel->delete();
         if (isset($info)) return response($info,422);
     }
 
@@ -301,6 +306,7 @@ class PunishController extends Controller
         $data['staffSn'] = $object->staff_sn;
         $data['violateAt'] = $object->violate_at;
         $data['ruleId'] = $object->rule_id;
+        $data['token'] = $object->token;
         $rule = DB::table('rules')->where('id', $object->rule_id)->first();
         try {
             $this->validate($object, [
