@@ -119,6 +119,7 @@ class CreatePunishTable extends Migration
             $table->char('staff_sn',6)->comment('员工编号');
             $table->char('month',6)->comment('违纪月份');
             $table->integer('rules_id')->comment('制度id');
+            $table->tinyInteger('state')->comment('状态标识')->nullable();
         });
 
         Schema::create('signs', function (Blueprint $table) {

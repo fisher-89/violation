@@ -38,13 +38,19 @@ class CountService
      * @param $type
      * @return array|mixed
      */
-    public function generate($staff, $arr, $type, $quantity = '')
+    public function generate($staff, $arr, $type, $quantity = '', $state = '')
     {
         $info = [];
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
         $num = $this->countRuleNum($arr);
-        $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where(['staff_sn' => $arr['staffSn'], 'month' => date('Ym', strtotime($arr['violateAt'])), 'rules_id' => $arr['ruleId']])->count()+$num;
+        $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where([
+                'staff_sn' => $arr['staffSn'],
+                'month' => date('Ym', strtotime($arr['violateAt'])),
+                'rules_id' => $arr['ruleId']
+            ])->when($state == 1, function ($query) {
+                $query->where('state', 1);
+            })->count() + $num;
         $this->quantity = $equation->$str == 1 ? $quantity : $number;
         $signs = $this->signsModel->get();
         $info['states'] = $equation->$str == '1' ? 1 : 0;
@@ -67,11 +73,12 @@ class CountService
                     'month' => date('Ym', strtotime($arr['violateAt'])),
                     'rules_id' => $arr['ruleId']
                 ]);
-            }else{
+            } else {
                 $pretreatment->update([
                     'staff_sn' => $arr['staffSn'],
                     'month' => date('Ym', strtotime($arr['violateAt'])),
-                    'rules_id' => $arr['ruleId']
+                    'rules_id' => $arr['ruleId'],
+                    'state' => $state == 1 ? 1 : null,
                 ]);
             }
             $info['token'] = $pretreatment->token;
