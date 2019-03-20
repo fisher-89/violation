@@ -20,7 +20,7 @@ class PunishController extends Controller
     protected $produceMoneyService;
     protected $error;
 
-    public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth,Pretreatment $pretreatment)
+    public function __construct(PunishService $punishService, CountService $produceMoneyService, PunishHasAuth $punishHasAuth, Pretreatment $pretreatment)
     {
         $this->punishService = $punishService;
         $this->pretreatmentModel = $pretreatment;
@@ -298,7 +298,7 @@ class PunishController extends Controller
         }
         DB::commit();
         $this->pretreatmentModel->delete();
-        if (isset($info)) return response($info,422);
+        if (isset($info)) return response($info, 422);
     }
 
     protected function verifyBatch($object, $staff, $billing)
@@ -352,7 +352,7 @@ class PunishController extends Controller
                     function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
                         if ($rule != false) {
                             $quantity = $rule->money_custom_settings == 1 ? $object->quantity : '';
-                            $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity);
+                            $now = $this->produceMoneyService->generate($staff, $data, 'money', $quantity, 1);
                             if ($now['data'] != $value && $now['states'] != 1) {
                                 $this->error['money'][] = '金额被改动';
                             }
@@ -363,7 +363,7 @@ class PunishController extends Controller
                     function ($attribute, $value, $event) use ($data, $staff, $object, $rule) {
                         if ($rule != false) {
                             $quantity = $rule->score_custom_settings == 1 ? $object->quantity : '';
-                            $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity);
+                            $score = $this->produceMoneyService->generate($staff, $data, 'score', $quantity, 1);
                             if ($score['data'] != $value && $score['states'] != 1) {
                                 $this->error['score'][] = '分值被改动';
                             }

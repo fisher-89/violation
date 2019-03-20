@@ -37,18 +37,30 @@ class TotalService
         $id = $department == true ? $this->department(is_array($department) ? $department : $department->toArray()) : false;
         $list = $this->countStaffModel->with(['countHasPunish.punish'])->when($department == true, function ($query) use ($id) {
             $query->whereIn('department_id', $id);
+        })->when(isset($request->area), function ($query) use ($request) {
+            $query->where('area', $request->area);
         })->filterByQueryString()->SortByQueryString()->withPagination($request->get('pagesize', 10));
         if ($departmentId == false) {
-            $list['money'] = DB::table('count_staff')->where('month', substr($request->filters, -6))->sum('money');
-            $list['paid_money'] = DB::table('count_staff')->where('month', substr($request->filters, -6))->sum('paid_money');
-            $list['score'] = DB::table('count_staff')->where('month', substr($request->filters, -6))->sum('score');
+            $list['money'] = DB::table('count_staff')->where('month', substr($request->filters, -6))
+                ->when(isset($request->area), function ($query) use ($request) {
+                    $query->where('area', $request->area);
+                })->sum('money');
+            $list['paid_money'] = DB::table('count_staff')->where('month', substr($request->filters, -6))
+                ->when(isset($request->area), function ($query) use ($request) {
+                    $query->where('area', $request->area);
+
+                })->sum('paid_money');
+            $list['score'] = DB::table('count_staff')->where('month', substr($request->filters, -6))
+                ->when(isset($request->area), function ($query) use ($request) {
+                    $query->where('area', $request->area);
+                })->sum('score');
         }
         return $list;
     }
 
     public function showData($request)
     {
-        $countData = $this->countStaffModel->where(['month'=>$request->month,'area'=>$request->area])->get();
+        $countData = $this->countStaffModel->where(['month' => $request->month, 'area' => $request->area])->get();
         $id = [];
         foreach ($countData as $value) {
             $id[] = $value['department_id'];
