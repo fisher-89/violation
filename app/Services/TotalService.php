@@ -77,7 +77,7 @@ class TotalService
     protected function department($array, $id = []): array
     {
         $id[] = isset($array['id']) ? $array['id'] : '';
-        if ($array['children'] != []) {
+        if (!empty($array['children'])) {
             foreach ($array['children'] as $value) {
                 $id[] = isset($value['id']) ? $value['id'] : '';
                 if ($value['children'] != []) {
