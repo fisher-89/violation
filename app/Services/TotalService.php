@@ -103,8 +103,7 @@ class TotalService
         try {
             DB::beginTransaction();
             foreach ($all['id'] as $k => $v) {
-                $countStaff = $this->countStaffModel->with(['countHasPunish.punish'])->find($v);
-                $data[] = $countStaff;
+                $countStaff = $this->countStaffModel->find($v);
                 if ($countStaff == false || $countStaff->has_settle == 1) continue;
                 $countStaff->update([
                     'paid_money' => $key == 'salary' ? $all['paid_type'] + $countStaff->paid_money :
@@ -118,6 +117,7 @@ class TotalService
                         'action_staff_sn' => $request->user()->staff_sn,
                         'paid_type' => $all['paid_type'],
                         'paid_at' => date('Y-m-d H:i:s')]);
+                $data[] = $this->countStaffModel->with(['countHasPunish.punish'])->find($v);
             }
             DB::commit();
         } catch (\Exception $exception) {
