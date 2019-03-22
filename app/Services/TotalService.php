@@ -111,8 +111,9 @@ class TotalService
                         $countStaff->salary == 0 ? $countStaff->money : $this->valueOperation($countStaff),
                     $key => $key == 'salary' ? $all['paid_type'] : $countStaff->money - $countStaff->paid_money,
                     'has_settle' => 1]);
-                $this->punishModel->where('staff_sn', $countStaff->staff_sn)->whereYear('billing_at', substr($countStaff->month, 4))
-                    ->whereMonth('billing_at', substr($countStaff->month, -2))->update([
+                $objId = $this->countHasPunishModel->where('count_id',$v)->get(['punish_id']);
+                $arrayId = $objId == false ? [] : $objId->toArray();
+                $this->punishModel->whereIn('id', array_column($arrayId,'punish_id'))->update([
                         'has_paid' => 1,
                         'action_staff_sn' => $request->user()->staff_sn,
                         'paid_type' => $all['paid_type'],
