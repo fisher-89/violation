@@ -83,7 +83,7 @@ class CountService
                     'state' => $state == 1 ? 1 : null,
                 ]);
             }
-            $info['token'] = $pretreatment->token;
+            $info['token'] = empty($pretreatment) ? '' : $pretreatment->token;
         }
         return $info;
     }
