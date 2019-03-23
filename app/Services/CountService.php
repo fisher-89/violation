@@ -66,20 +66,22 @@ class CountService
         $info['data'] = eval('return ' . $output . ';');
         if ($arr['token'] != 111) {
             $pretreatment = $this->pretreatmentModel->where('token', $arr['token'])->first();
-            if ($pretreatment == false && $type == 'money') {
-                $pretreatment = $this->pretreatmentModel->create([
-                    'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
-                    'staff_sn' => $arr['staffSn'],
-                    'month' => date('Ym', strtotime($arr['violateAt'])),
-                    'rules_id' => $arr['ruleId']
-                ]);
-            } else {
-                $pretreatment->update([
-                    'staff_sn' => $arr['staffSn'],
-                    'month' => date('Ym', strtotime($arr['violateAt'])),
-                    'rules_id' => $arr['ruleId'],
-                    'state' => $state == 1 ? 1 : null,
-                ]);
+            if($type == 'money'){
+                if ($pretreatment == false) {
+                    $pretreatment = $this->pretreatmentModel->create([
+                        'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
+                        'staff_sn' => $arr['staffSn'],
+                        'month' => date('Ym', strtotime($arr['violateAt'])),
+                        'rules_id' => $arr['ruleId']
+                    ]);
+                } else {
+                    $pretreatment->update([
+                        'staff_sn' => $arr['staffSn'],
+                        'month' => date('Ym', strtotime($arr['violateAt'])),
+                        'rules_id' => $arr['ruleId'],
+                        'state' => $state == 1 ? 1 : null,
+                    ]);
+                }
             }
             $info['token'] = $pretreatment->token;
         }
