@@ -99,7 +99,7 @@ class TotalService
         $data = [];
         $all = $request->all();
         if (empty($all['paid_type'])) abort(404, '未找到支付类型');
-        $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
+        $key = $all['paid_type'] == 1 ? ('alipay') : ($all['paid_type'] == 2 ? 'wechat' : 'salary');
         try {
             DB::beginTransaction();
             foreach ($all['id'] as $k => $v) {
@@ -108,7 +108,7 @@ class TotalService
                 $countStaff->update([
                     'paid_money' => $key == 'salary' ? $all['paid_type'] + $countStaff->paid_money :
                         $countStaff->salary == 0 ? $countStaff->money : $this->valueOperation($countStaff),
-                    $key => $key == 'salary' ? $all['paid_type'] : $countStaff->money - $countStaff->paid_money,
+                    $key => $all['paid_type'] > 2 ? $all['paid_type'] : $countStaff->money - $countStaff->paid_money,
                     'has_settle' => 1]);
                 $objId = $this->countHasPunishModel->where('count_id',$v)->get(['punish_id']);
                 $arrayId = $objId == false ? [] : $objId->toArray();

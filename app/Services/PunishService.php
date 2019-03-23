@@ -364,7 +364,7 @@ class PunishService
                     'paid_at' => date('Y-m-d H:i:s')
                 ]);
                 $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
-                $paid = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
+                $paid = $all['paid_type'] == 1 ? ('alipay') : ($all['paid_type'] == 2 ? 'wechat' : 'salary');
                 $countStaff->update([
                     'paid_money' => $paid == 'salary' ? $countStaff->paid_money + $all['paid_type'] : $countStaff->paid_money + $punish->money,
                     $paid => $paid == 'salary' ? $all['paid_type'] + $countStaff->$paid : $punish->money + $countStaff->$paid,
@@ -409,7 +409,7 @@ class PunishService
             DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
             if ($punish->has_paid == 1) {//退
-                $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
+                $key = $punish->paid_type == 1 ? ('alipay') : ($punish->paid_type == 2 ? 'wechat' : 'salary');
                 $countStaff->update([
                     'paid_money' => $punish->paid_type > 2 ? $countStaff->paid_money - $punish->paid_type : $countStaff->paid_money - $punish->money,
                     $key => $punish->paid_type > 2 ? ($countStaff->salary >= $punish->paid_type ? $countStaff->salary - $punish->paid_type : abort(500, '数据库被非法修改')) : ($countStaff->$key >= $punish->money ? $countStaff->$key - $punish->money : abort(500, '数据库被非法修改')),
@@ -424,7 +424,7 @@ class PunishService
             } else {//支付
                 $all = $request->all();
                 if (empty($all['paid_type'])) abort(404, '未找到付款类型');
-                $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
+                $key = $all['paid_type'] == 1 ? ('alipay') : ($all['paid_type'] == 2 ? 'wechat' : 'salary');
                 $countStaff->update([
                     'paid_money' => $punish->paid_type > 2 ? $countStaff->paid_money + $punish->paid_type : $countStaff->paid_money + $punish->money,
                     $key => $all['paid_type'] > 2 ? $countStaff->$key + $all['paid_type'] : $countStaff->$key + $punish->money,
