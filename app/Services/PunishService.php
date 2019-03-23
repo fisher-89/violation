@@ -207,7 +207,7 @@ class PunishService
                 'has_settle' => 0
             ]);
         } else {
-            if($staffData->deleted_at == true){
+            if ($staffData->deleted_at == true) {
                 $staffData->restore();
             }
             $staffData->update([
@@ -408,11 +408,11 @@ class PunishService
         try {
             DB::beginTransaction();
             $countStaff = $this->countStaffModel->where(['staff_sn' => $punish->staff_sn, 'month' => date('Ym', strtotime($punish->billing_at))])->first();
-            if ($punish->has_paid == 1) {
+            if ($punish->has_paid == 1) {//退
                 $key = $punish->paid_type == 1 ? 'alipay' : $punish->paid_type == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
                     'paid_money' => $punish->paid_type > 2 ? $countStaff->paid_money - $punish->paid_type : $countStaff->paid_money - $punish->money,
-                    $key => $punish->paid_type > 2 ? $countStaff->$key - $punish->paid_type : $countStaff->$key - $punish->money,
+                    $key => $punish->paid_type > 2 ? ($countStaff->salary >= $punish->paid_type ? $countStaff->salary - $punish->paid_type : abort(500, '数据库被非法修改')) : ($countStaff->$key >= $punish->money ? $countStaff->$key - $punish->money : abort(500, '数据库被非法修改')),
                     'has_settle' => 0
                 ]);
                 $punish->update([
@@ -421,13 +421,13 @@ class PunishService
                     'paid_type' => null,
                     'paid_at' => NULL
                 ]);
-            } else {
+            } else {//支付
                 $all = $request->all();
                 if (empty($all['paid_type'])) abort(404, '未找到付款类型');
                 $key = $all['paid_type'] == 1 ? 'alipay' : $all['paid_type'] == 2 ? 'wechat' : 'salary';
                 $countStaff->update([
                     'paid_money' => $punish->paid_type > 2 ? $countStaff->paid_money + $punish->paid_type : $countStaff->paid_money + $punish->money,
-                    $key => $punish->paid_type > 2 ? $countStaff->$key + $punish->paid_type : $countStaff->$key + $punish->money,
+                    $key => $all['paid_type'] > 2 ? $countStaff->$key + $all['paid_type'] : $countStaff->$key + $punish->money,
                     'has_settle' => $countStaff->paid_money + $punish->money >= $countStaff->money ? 1 : 0
                 ]);
                 $punish->update([
@@ -458,7 +458,7 @@ class PunishService
         if (substr($punish->billing_at, 0, 7) != date('Y-m'))
             abort(400, '不能删除已生成账单数据');
         $this->reduceCount($punish);
-        if ($punish->point_log_id == true){
+        if ($punish->point_log_id == true) {
             $this->deletePoint($punish->point_log_id);
         }
         $punish->delete();
@@ -477,13 +477,13 @@ class PunishService
             if ($countStaff->money - $punish->money == 0)
                 $countStaff->delete();
             else
-            $countStaff->update([
-                'money' => $countStaff->money - $punish->money,
-                'score' => $countStaff->score - $punish->score,
-                'has_settle' => $punish->paid_type > 2 ?
-                    ($countStaff->paid_money - $punish->paid_type >= $countStaff->money ? 1 : 0) :
-                    ($countStaff->paid_money - $punish->paid_money >= $countStaff->money ? 1 : 0)
-            ]);
+                $countStaff->update([
+                    'money' => $countStaff->money - $punish->money,
+                    'score' => $countStaff->score - $punish->score,
+                    'has_settle' => $punish->paid_type > 2 ?
+                        ($countStaff->paid_money - $punish->paid_type >= $countStaff->money ? 1 : 0) :
+                        ($countStaff->paid_money - $punish->paid_money >= $countStaff->money ? 1 : 0)
+                ]);
         }
     }
 
