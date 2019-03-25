@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PushCollection;
 use App\Jobs\SendImage;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\PushingLog;
 use App\Models\CountStaff;
@@ -36,7 +37,7 @@ class ImageController extends Controller
         $staffSn = $request->user()->staff_sn;
         $this->validate($request, [
             'push_type' => 'between:1,1|present',
-            'push_id' => 'array|required',
+            'push_id' => ['array',$request->push_type == 2 ? 'present' : 'required'],
             'push_id.*' => ['numeric', $request->push_type == 2 ? 'present' : 'required', function ($attribute, $value, $event) use ($staffSn) {
                 $string = $this->pushingModel->where('id', $value)->value('staff_sn');
                 if ($string == false) {
@@ -95,10 +96,9 @@ class ImageController extends Controller
             $this->pushingLogModel->insert($array);
         }
         if ($punish != false && $all['push_type'] === 2 || $all['push_type'] == 3) {
-            SendImage::dispatch($punish->toArray())->delay(now()->addMinutes(1));
-        } else {
-            return response('', 200);
+            SendImage::dispatch($punish->toArray())->delay(Carbon::now()->addMinutes(1));
         }
+        return response('', 200);
     }
 
     /**
