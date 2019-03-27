@@ -106,8 +106,8 @@ class TotalService
                 $countStaff = $this->countStaffModel->find($v);
                 if ($countStaff == false || $countStaff->has_settle == 1) continue;
                 $countStaff->update([
-                    'paid_money' => $key == 'salary' ? $all['paid_type'] + $countStaff->paid_money :
-                        $countStaff->salary == 0 ? $countStaff->money : $this->valueOperation($countStaff),
+                    'paid_money' => $all['paid_type'] > 2 ? ($all['paid_type'] + $countStaff->paid_money) :
+                        ($countStaff->salary == 0 ? $countStaff->money : $this->valueOperation($countStaff)),
                     $key => $all['paid_type'] > 2 ? $all['paid_type'] : $countStaff->money - $countStaff->paid_money,
                     'has_settle' => 1]);
                 $objId = $this->countHasPunishModel->where('count_id',$v)->get(['punish_id']);
