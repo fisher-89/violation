@@ -30,6 +30,7 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
 
         $admin->post('/money', Controllers\CountController::class . '@money');//金额
         $admin->post('/score', Controllers\CountController::class . '@score');//分值
+        $admin->get('/del_money',Controllers\CountController::class.'@delMoney');
 
         $admin->get('/export', Controllers\ExcelController::class . '@export');//Excel导出
         $admin->post('/import', Controllers\ExcelController::class . '@import');//Excel导入

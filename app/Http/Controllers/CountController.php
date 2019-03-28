@@ -68,4 +68,9 @@ class CountController extends Controller
             'rule_id' => '制度id',
         ]);
     }
+
+    public function delMoney(Request $request)
+    {
+        return $this->countService->delMoney($request);
+    }
 }
