@@ -23,14 +23,14 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->post('', Controllers\PunishController::class . '@store');//添加
         $admin->put('/{id}', Controllers\PunishController::class . '@editPunish');
         $admin->delete('/{id}', Controllers\PunishController::class . '@delete');//删除
-        $admin->post('batch',Controllers\PunishController::class . '@batchStore');//批量添加
+        $admin->post('batch', Controllers\PunishController::class . '@batchStore');//批量添加
 
         $admin->post('/pay', Controllers\PunishController::class . '@listPaymentMoney');//展示页面用单向更新已支付
         $admin->get('/both-pay/{id}', Controllers\PunishController::class . '@detailedPagePayment');//详细页面用双向改变支付状态
 
         $admin->post('/money', Controllers\CountController::class . '@money');//金额
         $admin->post('/score', Controllers\CountController::class . '@score');//分值
-        $admin->get('/del_money',Controllers\CountController::class.'@delMoney');
+        $admin->get('/del-money', Controllers\CountController::class . '@delMoney');
 
         $admin->get('/export', Controllers\ExcelController::class . '@export');//Excel导出
         $admin->post('/import', Controllers\ExcelController::class . '@import');//Excel导入
@@ -59,12 +59,12 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
         $admin->delete('/{id}', Controllers\RuleController::class . '@delType');  //制度分类表删除
     });
     $admin->get('count-excel', Controllers\ExcelController::class . '@countStaffExcel');//部门导出
-    $admin->get('count-staff-excel',Controllers\ExcelController::class . '@staffExcel');//点进去内人员详细导出
+    $admin->get('count-staff-excel', Controllers\ExcelController::class . '@staffExcel');//点进去内人员详细导出
     $admin->post('count-staff', Controllers\TotalController::class . '@payStatus');//单个人支付
     $admin->get('count-staff', Controllers\TotalController::class . '@getStaffTotal');//获取统计页面数据
-    $admin->get('show-department',Controllers\TotalController::class . '@show');
+    $admin->get('show-department', Controllers\TotalController::class . '@show');
     $admin->post('bill-image', Controllers\TotalController::class . '@billImage');//生成图片页面
-    $admin->get('ding-group',Controllers\ExcelController::class . '@getDingGroup');//获取所有群组  增加推送权限用
+    $admin->get('ding-group', Controllers\ExcelController::class . '@getDingGroup');//获取所有群组  增加推送权限用
 
     $admin->group(['prefix' => 'pushing-auth'], function (RouteContract $admin) {
         $admin->get('', Controllers\PushAuthController::class . '@index');
