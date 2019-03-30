@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Pretreatment;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use App\Models\RuleTypes;
@@ -69,6 +70,7 @@ class CountService
             if ($pretreatment == false) {
                 if ($type == 'money') {
                     $pretreatment = $this->pretreatmentModel->create([
+                        'create_sn' => Auth::user()->staff_sn,
                         'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
                         'staff_sn' => $arr['staffSn'],
                         'month' => date('Ym', strtotime($arr['violateAt'])),

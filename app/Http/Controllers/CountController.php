@@ -76,6 +76,6 @@ class CountController extends Controller
 
     public function eliminate(Request $request)
     {
-        return $this->countService->eliminate($request);
+        $this->countService->eliminate($request);
     }
 }
