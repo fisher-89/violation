@@ -65,7 +65,7 @@ class PunishController extends Controller
         $staff = (bool)$request->staff_sn == true ? app('api')->withRealException()->getStaff(trim($request->staff_sn)) : null;
         $billing = (bool)$request->billing_sn == true ? app('api')->withRealException()->getStaff(trim($request->billing_sn)) : null;
         $this->punishStoreVerify($request, $staff, $billing);
-        $this->pretreatmentModel->where(['staff_sn' => $request->staff_sn, 'month' => date('Ym', strtotime($request->violate_at)), 'rules_id' => $request->rule_id])->delete();
+        $this->pretreatmentModel->where(['create_sn' => $request->user()->staff_sn, 'staff_sn' => $request->staff_sn, 'month' => date('Ym', strtotime($request->violate_at)), 'rules_id' => $request->rule_id])->delete();
         return $this->punishService->receiveData($request, $staff, $billing);
     }
 
@@ -298,7 +298,7 @@ class PunishController extends Controller
             }
         }
         DB::commit();
-        $this->pretreatmentModel->delete();
+        $this->pretreatmentModel->where('create_sn', $request->user()->staff_sn)->delete();
         if (isset($info)) return response($info, 422);
     }
 

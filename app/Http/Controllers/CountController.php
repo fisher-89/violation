@@ -73,4 +73,9 @@ class CountController extends Controller
     {
         return $this->countService->delMoney($request);
     }
+
+    public function eliminate(Request $request)
+    {
+        return $this->countService->eliminate($request);
+    }
 }

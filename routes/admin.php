@@ -30,7 +30,8 @@ Route::group(['middleware' => 'auth:api'], function (RouteContract $admin) {
 
         $admin->post('/money', Controllers\CountController::class . '@money');//金额
         $admin->post('/score', Controllers\CountController::class . '@score');//分值
-        $admin->get('/del-money', Controllers\CountController::class . '@delMoney');
+        $admin->get('/del-money', Controllers\CountController::class . '@delMoney');//删除暂存数据
+        $admin->get('/eliminate',Controllers\CountController::class . '@eliminate');//清除暂存所有
 
         $admin->get('/export', Controllers\ExcelController::class . '@export');//Excel导出
         $admin->post('/import', Controllers\ExcelController::class . '@import');//Excel导入

@@ -16,6 +16,6 @@ class Pretreatment extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'token', 'staff_sn', 'month', 'rules_id'
+        'create_sn', 'token', 'staff_sn', 'month', 'rules_id', 'state'
     ];
 }

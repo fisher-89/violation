@@ -115,6 +115,7 @@ class CreatePunishTable extends Migration
 
         Schema::create('pretreatment',function(Blueprint $table){
             $table->increments('id');
+            $table->char('create_sn',6)->comment('操作人编号');
             $table->char('token',18)->comment('识别码');
             $table->char('staff_sn',6)->comment('员工编号');
             $table->char('month',6)->comment('违纪月份');

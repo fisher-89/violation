@@ -141,13 +141,19 @@ class CountService
 
     public function delMoney($request)
     {
-        $pretreatment = $this->pretreatmentModel->where('token',$request->token)->first();
-        if(empty($pretreatment)){
-           abort(404,'未找到当前数据');
+        $pretreatment = $this->pretreatmentModel->where(['token' => $request->token, 'create_sn' => $request->user()->staff_sn])->first();
+        if (empty($pretreatment)) {
+            abort(404, '未找到当前数据');
         }
         $pretreatment->delete();
-        return response('',204);
+        return response('', 204);
     }
+
+    public function eliminate($request)
+    {
+        $this->pretreatmentModel->where('create_sn', $request->user()->staff_sn)->delete();
+    }
+
     /**
      * 下面为预定义函数，备数据库使用
      * 当前制度/本月/次数统计
