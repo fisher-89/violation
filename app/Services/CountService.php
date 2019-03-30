@@ -77,7 +77,7 @@ class CountService
                         'rules_id' => $arr['ruleId']
                     ]);
                 }
-            } else {
+            } else if(!empty($pretreatment) && $type == 'money'){
                 $pretreatment->update([
                     'staff_sn' => $arr['staffSn'],
                     'month' => date('Ym', strtotime($arr['violateAt'])),
