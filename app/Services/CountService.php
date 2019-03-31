@@ -66,7 +66,7 @@ class CountService
         }
         $info['data'] = eval('return ' . $output . ';');
         if ($arr['token'] != 111 && $type == 'money') {
-            $info['token'] = empty($pretreatment) ? '' : $this->dataPretreatment($arr,$state);
+            $info['token'] = $this->dataPretreatment($arr,$state);
         }
         return $info;
     }
