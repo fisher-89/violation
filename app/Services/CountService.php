@@ -42,6 +42,26 @@ class CountService
     public function generate($staff, $arr, $type, $quantity = '', $state = '')
     {
         $info = [];
+        if ($arr['token'] != 111 && $type == 'money' && $state == false) {
+            $pretreatment = $this->pretreatmentModel->where('token', $arr['token'])->first();
+            if ($pretreatment == false) {
+                $pretreatment = $this->pretreatmentModel->create([
+                    'create_sn' => Auth::user()->staff_sn,
+                    'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
+                    'staff_sn' => $arr['staffSn'],
+                    'month' => date('Ym', strtotime($arr['violateAt'])),
+                    'rules_id' => $arr['ruleId']
+                ]);
+            } else {
+                $pretreatment->update([
+                    'staff_sn' => $arr['staffSn'],
+                    'month' => date('Ym', strtotime($arr['violateAt'])),
+                    'rules_id' => $arr['ruleId'],
+                    'state' => $state == 1 ? 1 : null,
+                ]);
+            }
+            $info['token'] = empty($pretreatment) ? '' : $pretreatment->token;
+        }
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
         $num = $type == 'score' ? $this->countRuleNum($arr) - 1 : $this->countRuleNum($arr);
@@ -65,26 +85,6 @@ class CountService
             abort(500, '公式运算出错：包含非可运算数据');
         }
         $info['data'] = eval('return ' . $output . ';');
-        if ($arr['token'] != 111 && $type == 'money') {
-            $pretreatment = $this->pretreatmentModel->where('token', $arr['token'])->first();
-            if ($pretreatment == false) {
-                $pretreatment = $this->pretreatmentModel->create([
-                    'create_sn' => Auth::user()->staff_sn,
-                    'token' => substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'), 0, 16),
-                    'staff_sn' => $arr['staffSn'],
-                    'month' => date('Ym', strtotime($arr['violateAt'])),
-                    'rules_id' => $arr['ruleId']
-                ]);
-            } else {
-                $pretreatment->update([
-                    'staff_sn' => $arr['staffSn'],
-                    'month' => date('Ym', strtotime($arr['violateAt'])),
-                    'rules_id' => $arr['ruleId'],
-                    'state' => $state == 1 ? 1 : null,
-                ]);
-            }
-            $info['token'] = empty($pretreatment) ? '' : $pretreatment->token;
-        }
         return $info;
     }
 
@@ -165,7 +165,7 @@ class CountService
     public function countRuleNum($parameter)
     {
         return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'],
-                'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count() + 1;
+                'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count();
     }
 
     public function getBrandValue($staffInfo)
