@@ -298,7 +298,7 @@ class PunishController extends Controller
             }
         }
         DB::commit();
-        $this->pretreatmentModel->where('create_sn', $request->user()->staff_sn)->delete();
+//        $this->pretreatmentModel->where('create_sn', $request->user()->staff_sn)->delete();
         if (isset($info)) return response($info, 422);
     }
 
