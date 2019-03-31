@@ -64,7 +64,7 @@ class CountService
         }
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
-        $num = $type == 'score' ? $this->countRuleNum($arr) - 1 : $this->countRuleNum($arr);
+        $num = $this->countRuleNum($arr);
         $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where([
                 'staff_sn' => $arr['staffSn'],
                 'month' => date('Ym', strtotime($arr['violateAt'])),
