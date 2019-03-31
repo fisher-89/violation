@@ -52,7 +52,7 @@ class CountService
             ])->when($state == 1, function ($query) {
                 $query->where('state', 1);
             })->count() + $num;
-        $this->quantity = $equation->$str == 1 ? ($quantity) : ($type == 'score' ? $number - 1 : $number);
+        $this->quantity = $equation->$str == 1 ? ($quantity) : ($type == 'score' && $state == false ? $number - 1 : $number);
         $signs = $this->signsModel->get();
         $info['states'] = $equation->$str == '1' ? 1 : 0;
         $info['quantity'] = $number;
