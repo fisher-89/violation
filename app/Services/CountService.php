@@ -42,7 +42,30 @@ class CountService
     public function generate($staff, $arr, $type, $quantity = '', $state = '')
     {
         $info = [];
-        if ($arr['token'] != 111 && $type == 'money' && $state == false) {
+        $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
+        $str = $type . '_custom_settings';
+        $num = $this->countRuleNum($arr);
+        $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where([
+                'staff_sn' => $arr['staffSn'],
+                'month' => date('Ym', strtotime($arr['violateAt'])),
+                'rules_id' => $arr['ruleId']
+            ])->when($state == 1, function ($query) {
+                $query->where('state', 1);
+            })->count() + $num;
+        $this->quantity = $equation->$str == 1 ? ($quantity) : ($type == 'score' ? $number - 1 : $number);
+        $signs = $this->signsModel->get();
+        $info['states'] = $equation->$str == '1' ? 1 : 0;
+        $info['quantity'] = $number;
+        $variable = $this->variableModel->get();
+        $systemArray = explode(',', $equation->$type);
+        $repeatedly = $this->operator($signs, implode($systemArray));
+        $SystemVariables = $this->parameters($variable, $repeatedly, $arr, $staff);
+        $output = $this->variable($SystemVariables);
+        if (preg_match('/\A-Za-z/', $output)) {
+            abort(500, '公式运算出错：包含非可运算数据');
+        }
+        $info['data'] = eval('return ' . $output . ';');
+        if ($arr['token'] != 111 && $type == 'money' && $state != 1) {
             $pretreatment = $this->pretreatmentModel->where('token', $arr['token'])->first();
             if ($pretreatment == false) {
                 $pretreatment = $this->pretreatmentModel->create([
@@ -62,29 +85,6 @@ class CountService
             }
             $info['token'] = empty($pretreatment) ? '' : $pretreatment->token;
         }
-        $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
-        $str = $type . '_custom_settings';
-        $num = $this->countRuleNum($arr);
-        $number = $arr['token'] == 111 ? $num : $this->pretreatmentModel->where([
-                'staff_sn' => $arr['staffSn'],
-                'month' => date('Ym', strtotime($arr['violateAt'])),
-                'rules_id' => $arr['ruleId']
-            ])->when($state == 1, function ($query) {
-                $query->where('state', 1);
-            })->count() + $num;
-        $this->quantity = $equation->$str == 1 ? $quantity : $number;
-        $signs = $this->signsModel->get();
-        $info['states'] = $equation->$str == '1' ? 1 : 0;
-        $info['quantity'] = $number;
-        $variable = $this->variableModel->get();
-        $systemArray = explode(',', $equation->$type);
-        $repeatedly = $this->operator($signs, implode($systemArray));
-        $SystemVariables = $this->parameters($variable, $repeatedly, $arr, $staff);
-        $output = $this->variable($SystemVariables);
-        if (preg_match('/\A-Za-z/', $output)) {
-            abort(500, '公式运算出错：包含非可运算数据');
-        }
-        $info['data'] = eval('return ' . $output . ';');
         return $info;
     }
 
@@ -165,7 +165,7 @@ class CountService
     public function countRuleNum($parameter)
     {
         return $this->quantity != '' ? $this->quantity : $this->punishModel->where(['staff_sn' => $parameter['staffSn'],
-                'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count();
+                'rule_id' => $parameter['ruleId'], 'month' => date('Ym', strtotime($parameter['violateAt']))])->count() + 1;
     }
 
     public function getBrandValue($staffInfo)
