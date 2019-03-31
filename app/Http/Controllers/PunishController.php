@@ -280,7 +280,9 @@ class PunishController extends Controller
             }
             $point[] = $this->punishService->storePunishData($request, $punishObject, $staff, $billing);
         }
-        if ($all['sync_point'] == 1 && isset($point)) {
+        if(isset($info)){
+            DB::rollBack();
+        }else if ($all['sync_point'] == 1 && isset($point)) {
             try {
                 $pointArr = $this->punishService->storePoint($point);
                 if (!isset($pointArr[0]['source_foreign_key'])) {
