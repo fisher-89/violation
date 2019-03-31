@@ -42,6 +42,9 @@ class CountService
     public function generate($staff, $arr, $type, $quantity = '', $state = '')
     {
         $info = [];
+        if($state == 1) {
+            $this->dataManage($arr['token']);
+        }
         $equation = $this->ruleModel->where('id', $arr['ruleId'])->first();
         $str = $type . '_custom_settings';
         $num = $this->countRuleNum($arr);
@@ -69,6 +72,14 @@ class CountService
             $info['token'] = $this->dataPretreatment($arr,$state);
         }
         return $info;
+    }
+
+    protected function dataManage($token)
+    {
+        $pretreatment = $this->pretreatmentModel->where('token', $token)->first();
+        $pretreatment->update([
+            'state' => 1
+        ]);
     }
 
     protected function dataPretreatment($arr,$state)
